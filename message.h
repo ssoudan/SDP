@@ -1,19 +1,27 @@
 /*
- * message.h
- *
- *  Created on: Jul 28, 2013
- *      Author: ssoudan
- */
+ Service Discovery Protocol - Message
+ @author: Sebastien Soudan <sebastien.soudan@gmail.com>
+*/
 
 #ifndef MESSAGE_H_
 #define MESSAGE_H_
 
 //#include <XBee.h>
-#include <stdlib.h>
-#include <iostream>
 
+
+#ifndef ARDUINO
+	#include <iostream> 
+#else 
+ 	#include <iostream> 
+ 	//#include <stdlib.h>
+	//#include <stdint.h>
+#endif
+
+#ifndef ARDUINO 
 #define ERROR(x) printf(x);
-
+#else
+#define ERROR(x) // Nothing
+#endif
 
 #ifndef size_t
  #define size_t uint8_t
@@ -83,7 +91,8 @@ private:
 	ServiceType serviceType;
 
 public:
-//    virtual void DoSomething();
+	//    virtual void DoSomething();
+	
 	FS_Message() {
 		setServiceType(UNDEF_SERVICE);
 	};
@@ -92,8 +101,8 @@ public:
     
     static FS_Message *Decode(uint8_t *buffer, size_t size);
 
-    ServiceType getServiceType() const;
-    void setServiceType(const ServiceType serviceType);
+    inline ServiceType getServiceType() const {return serviceType; };
+    inline void setServiceType(const ServiceType serviceType) { this->serviceType = serviceType; };
 };
 
 
@@ -143,7 +152,7 @@ private:
 	uint8_t actionParameter[];
 
 public:
-//    virtual void DoSomething();
+	//    virtual void DoSomething();
 	DA_Message() {
 		setServiceType(UNDEF_SERVICE);	
 		setActionType(UNDEF_ACTION);
@@ -185,7 +194,7 @@ private:
 	uint8_t actionResult[];
 
 public:
-//    virtual void DoSomething();
+	//    virtual void DoSomething();
 	DAR_Message() {
 		setServiceType(UNDEF_SERVICE);	
 		setActionType(UNDEF_ACTION);

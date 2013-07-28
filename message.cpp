@@ -1,29 +1,46 @@
+/*
+ Service Discovery Protocol - Message
+ @author: Sebastien Soudan <sebastien.soudan@gmail.com>
+*/
+
 #include "message.h"
 #include <assert.h> 
 #include "util.h"
 
 
 FS_Message *FS_Message::Decode(uint8_t *buffer, size_t size) {
-	// TODO
-	return NULL;
+	assert (buffer != NULL);
+
+	assert (size >= 2);
+
+	FS_Message *fs = new FS_Message();
+
+	// Skip first byte
+
+	ServiceType serviceType = (ServiceType) buffer[1];
+	fs->setServiceType(serviceType);
+ 
+	return fs;
 };
 
 FSR_Message *FSR_Message::Decode(uint8_t *buffer, size_t size) {
 	assert (buffer != NULL);
 
-	assert (size >= 1 + 4 + 4 + 2);
+	assert (size >= 1 + 1 + 4 + 4 + 2);
 
 	FSR_Message *fsr = new FSR_Message();
 
-	ServiceType serviceType = (ServiceType) buffer[0];
+	// Skip first byte
+
+	ServiceType serviceType = (ServiceType) buffer[1];
 	fsr->setServiceType(serviceType);
  
  	XBeeAddress64 addr64 = XBeeAddress64();
- 	addr64.setMsb(convertArraytoUint32(&buffer[1]));
- 	addr64.setLsb(convertArraytoUint32(&buffer[1 + 4]));
+ 	addr64.setMsb(convertArraytoUint32(&buffer[1 + 1]));
+ 	addr64.setLsb(convertArraytoUint32(&buffer[1 + 1 + 4]));
     fsr->setAddress64(addr64);
 
-    XBeeAddress16 addr16 = convertArraytoUint16(&buffer[1 + 4 + 4]);
+    XBeeAddress16 addr16 = convertArraytoUint16(&buffer[1 + 1 + 4 + 4]);
     
     fsr->setAddress16(addr16);
 
@@ -54,40 +71,48 @@ Message *Message::Decode(uint8_t *buffer, size_t size) {
 size_t FS_Message::Encode(uint8_t *buffer, size_t limit) {
 	assert (buffer != NULL);
 		
-	if (limit < 1)
+	if (limit < 2)
 		// Buffer too small;
 		return 0;
 	
+	// Message type: 8 bits
+	// Service Type: 8 bits
+
 	buffer[0] = FS;
 
-	return 1;
+	buffer[1] = FS_Message::getServiceType();
+
+	return 2;
 };
 
 size_t FSR_Message::Encode(uint8_t *buffer, size_t limit) {
 	assert (buffer != NULL);
 		
-	if (limit < 1 + 4 + 4 + 2) {
+	if (limit < 1 + 1 + 4 + 4 + 2) {
 		// Buffer too small;
 		ERROR("Buffer too small.");	
 		return 0;
 	}
 	
 	// Message type: 8 bits
+	// Service Type: 8 bits
 	// addr64: 64 bits
 	// addr16: 16 bits
 
 	buffer[0] = FSR;
 	
+	buffer[1] = FSR_Message::getServiceType();
+
 	XBeeAddress64 addr64 = FSR_Message::getAddress64();
 
-	convertUint32toArray(addr64.getMsb(), &buffer[1]);
-	convertUint32toArray(addr64.getLsb(), &buffer[1+4]);
-	convertUint32toArray(addr64.getLsb(), &buffer[1+4]);
+	convertUint32toArray(addr64.getMsb(), &buffer[1 + 1]);
+	convertUint32toArray(addr64.getLsb(), &buffer[1 + 1 + 4]);
+	convertUint32toArray(addr64.getLsb(), &buffer[1 + 1 + 4]);
 
 	XBeeAddress16 addr16 = FSR_Message::getAddress16();
-	convertUint16toArray(addr16, &buffer[1+4+4]);
+	convertUint16toArray(addr16, &buffer[1 + 1 + 4 + 4]);
 
-	return 1 + 4 + 4 + 2;
+	return 1 + 1 + 4 + 4 + 2;
 };
 
 size_t DA_Message::Encode(uint8_t *buffer, size_t limit) {

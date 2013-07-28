@@ -1,5 +1,9 @@
+#
+# Service Discovery Protocol - Makefile
+# @author: Sebastien Soudan <sebastien.soudan@gmail.com>
+#
 
-CPPFLAGS=-I. -g3 -ggdb
+CPPFLAGS=-I. -g3 -ggdb -DARDUINO
 LDFLAGS=-g3 -ggdb
 LDLIBS=
 
@@ -13,4 +17,4 @@ test: $(OBJS)
 	g++ $(LDFLAGS) -o test $(OBJS) $(LDLIBS) 
 
 clean:
-	rm *.o test
+	rm -f *.o test

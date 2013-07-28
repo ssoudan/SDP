@@ -1,5 +1,8 @@
+/*
+ Service Discovery Protocol - Util
+ @author: Sebastien Soudan <sebastien.soudan@gmail.com>
+*/
 #include "util.h"
-
 
 void convertUint32toArray(const uint32_t value, uint8_t byteArray[]) { 
 	byteArray[0] = (uint8_t)((value >> 24) & 0xFF) ;
