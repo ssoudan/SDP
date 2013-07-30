@@ -3,7 +3,8 @@
 # @author: Sebastien Soudan <sebastien.soudan@gmail.com>
 #
 
-CPPFLAGS=-I. -g3 -ggdb -DARDUINO
+CPPFLAGS=-I. -g3 -ggdb 
+#CPPFLAGS=-I. -g3 -ggdb -DARDUINO
 LDFLAGS=-g3 -ggdb
 LDLIBS=
 

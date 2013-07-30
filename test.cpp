@@ -114,6 +114,63 @@ void testFSR() {
 	cout << "[OK] Tests of decode/encode of FSR" << std::endl;
 }
 
+
+/**
+	Test DA Encoding/Decoding
+*/
+void testDA() {
+
+	cout << "[..] Tests of decode/encode of DA" << std::endl;
+
+	// Create a new message
+	DA_Message da = DA_Message();
+	
+	da.setServiceType(RTC);
+	da.setActionType(GET_VALUE);
+	da.setActionParameterSize(3);
+	uint8_t array[3] = {4, 3, 2}; 
+	da.setActionParameter(array);
+
+	cout << da.getServiceType() << std::endl;
+
+	// Encode a message 
+	uint8_t buffer[20];
+
+	size_t size = da.Encode(buffer, sizeof(buffer));
+
+	cout << "size: " << std::dec << (int) size << std::endl;	
+
+	for (int i = 0 ; i < size ; i++) {
+		cout << i << " " << hex <<  (int) buffer[i] << std::endl;
+	}
+
+	// Attempt to decode a message from a buffer
+	Message *message = Message::Decode(buffer, size);
+
+	DA_Message* v = dynamic_cast<DA_Message*>(message);
+
+	if (v != NULL) {
+		cout << "decoded (service type): " << hex << (int) v->getServiceType() << endl;		
+		cout << "decoded (action type): " << hex << (int) v->getActionType() << endl;		
+		cout << "decoded (action parameter size): " << hex << (int) v->getActionParameterSize() << endl;		
+	}
+
+	assert (v->getServiceType() == RTC);
+	assert (v->getActionType() == GET_VALUE);
+	assert (v->getActionParameterSize() == 3);
+	// TODO add comparaison of the parameter
+
+	// Service Discovery Protocol
+	SDP sdp = SDP();
+	sdp.processMessage(v);
+
+	delete message;
+
+	cout << "[OK] Tests of decode/encode of DA" << std::endl;
+}
+
+
+
 int main() {
 
 	testFS();
@@ -121,6 +178,11 @@ int main() {
 	cout << std::endl << std::endl;
 
 	testFSR();
+
+	cout << std::endl << std::endl;
+
+	testDA();
+
 
 	// TODO
 

@@ -7,7 +7,6 @@
 #include <assert.h> 
 #include "util.h"
 
-
 FS_Message *FS_Message::Decode(uint8_t *buffer, size_t size) {
 	assert (buffer != NULL);
 
@@ -47,9 +46,30 @@ FSR_Message *FSR_Message::Decode(uint8_t *buffer, size_t size) {
 	return fsr;
 };
 
-DA_Message *DA_Message::Decode(uint8_t *buffer, size_t size) {
-	// TODO
-	return NULL;
+DA_Message *DA_Message::Decode(const uint8_t *buffer, const size_t size) {
+	assert (buffer != NULL);
+
+	assert (size >= 4);
+
+	DA_Message *da = new DA_Message();
+
+	// Skip first byte
+
+	ServiceType serviceType = (ServiceType) buffer[1];
+	da->setServiceType((ServiceType) serviceType);
+  	da->setActionType((ActionType) buffer[2]);
+
+  	const uint8_t psize = buffer[3];
+  	da->setActionParameterSize(psize);
+
+	assert (size >= 4 + psize);
+
+  	uint8_t* array = new uint8_t[psize];
+  	memcpy(array, &buffer[4], psize);
+	    
+    da->setActionParameter(array);
+
+	return da;
 };
 
 DAR_Message *DAR_Message::Decode(uint8_t *buffer, size_t size) {
@@ -97,6 +117,8 @@ size_t FSR_Message::Encode(uint8_t *buffer, size_t limit) {
 	// Message type: 8 bits
 	// Service Type: 8 bits
 	// addr64: 64 bits
+	//  - MSB (32 bit)
+	//  - LSB (32 bit)
 	// addr16: 16 bits
 
 	buffer[0] = FSR;
@@ -107,7 +129,6 @@ size_t FSR_Message::Encode(uint8_t *buffer, size_t limit) {
 
 	convertUint32toArray(addr64.getMsb(), &buffer[1 + 1]);
 	convertUint32toArray(addr64.getLsb(), &buffer[1 + 1 + 4]);
-	convertUint32toArray(addr64.getLsb(), &buffer[1 + 1 + 4]);
 
 	XBeeAddress16 addr16 = FSR_Message::getAddress16();
 	convertUint16toArray(addr16, &buffer[1 + 1 + 4 + 4]);
@@ -116,8 +137,34 @@ size_t FSR_Message::Encode(uint8_t *buffer, size_t limit) {
 };
 
 size_t DA_Message::Encode(uint8_t *buffer, size_t limit) {
-	// TODO
-	return NULL;
+
+	assert (buffer != NULL);
+
+	uint8_t size = DA_Message::getActionParameterSize();
+
+	if (limit < 4 + size) {
+		// Buffer too small;
+		ERROR("Buffer too small.");	
+		return 0;
+	}
+	
+	// Message type: 8 bits
+	// Service Type: 8 bits
+	// Action Type: 8 bits
+	// Parameter Size: 8 bits
+	// Parameter: ?
+
+	buffer[0] = DA;
+	buffer[1] = DA_Message::getServiceType();
+	buffer[2] = DA_Message::getActionType();
+	buffer[3] = size;
+
+	uint8_t *actionParameter = DA_Message::getActionParameter();
+	for (int i = 0 ; i < size ; i++) {
+		buffer[4 + i] = actionParameter[i];
+	}
+
+	return 4 + size;
 };
 
 size_t DAR_Message::Encode(uint8_t *buffer, size_t limit) {

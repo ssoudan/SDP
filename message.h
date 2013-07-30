@@ -149,7 +149,7 @@ private:
 	ServiceType serviceType;
 	ActionType actionType;
 	uint8_t actionParameterSize;
-	uint8_t actionParameter[];
+	uint8_t* actionParameter;
 
 public:
 	//    virtual void DoSomething();
@@ -163,22 +163,37 @@ public:
 		setServiceType(serviceType);	
 		setActionType(actionType);
 		setActionParameterSize(0);		
+		setActionParameter(NULL);
 	};
 
     virtual size_t Encode(uint8_t *buffer, size_t limit);
-    static DA_Message *Decode(uint8_t *buffer, size_t size);
+    static DA_Message *Decode(const uint8_t *buffer, const size_t size);
 
-    ServiceType getServiceType() const;
-    void setServiceType(const ServiceType serviceType);
+    inline ServiceType getServiceType() const { return serviceType; };
+    inline void setServiceType(const ServiceType serviceType) { this->serviceType = serviceType; };
 
-	ActionType getActionType() const;
-    void setActionType(const ActionType actionType);
+	inline ActionType getActionType() const { return actionType; };
+    inline void setActionType(const ActionType actionType) { this->actionType = actionType; };
 
-    uint8_t getActionParameterSize() const;
-    void setActionParameterSize(const uint8_t actionParameterSize);
+    inline uint8_t getActionParameterSize() const { return actionParameterSize; };
+    inline void setActionParameterSize(const uint8_t actionParameterSize)  { this->actionParameterSize = actionParameterSize; };
 
-    uint8_t* getActionParameter() const;
-    void setActionParameter(const uint8_t actionParameter[]);
+    inline uint8_t* getActionParameter() { return actionParameter; };
+    inline void setActionParameter(uint8_t* actionParameter) { 
+		if (actionParameterSize <= 0) {
+			ERROR("Incorrect parameter size, specify this first before assigning the actionParameter.");
+			return;
+		}
+
+		this->actionParameter = new uint8_t[actionParameterSize];
+		memcpy(this->actionParameter, actionParameter, actionParameterSize);
+		};
+
+    ~DA_Message() { 
+    	if (actionParameter != NULL) {
+    		delete[] actionParameter;
+    	}
+    };
 };
 
 
