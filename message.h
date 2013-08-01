@@ -18,7 +18,7 @@
 #endif
 
 #ifndef ARDUINO 
-#define ERROR(x) printf(x);
+#define ERROR(x) do { printf(x); printf("\n"); } while (0)
 #else
 #define ERROR(x) // Nothing
 #endif
@@ -157,6 +157,7 @@ public:
 		setServiceType(UNDEF_SERVICE);	
 		setActionType(UNDEF_ACTION);
 		setActionParameterSize(0);		
+		setActionParameter(NULL);
 	};
 
 	DA_Message(ServiceType serviceType, ActionType actionType) {
@@ -167,7 +168,7 @@ public:
 	};
 
     virtual size_t Encode(uint8_t *buffer, size_t limit);
-    static DA_Message *Decode(const uint8_t *buffer, const size_t size);
+    static DA_Message *Decode(uint8_t *buffer, size_t size);
 
     inline ServiceType getServiceType() const { return serviceType; };
     inline void setServiceType(const ServiceType serviceType) { this->serviceType = serviceType; };
@@ -176,12 +177,11 @@ public:
     inline void setActionType(const ActionType actionType) { this->actionType = actionType; };
 
     inline uint8_t getActionParameterSize() const { return actionParameterSize; };
-    inline void setActionParameterSize(const uint8_t actionParameterSize)  { this->actionParameterSize = actionParameterSize; };
+    inline void setActionParameterSize(const uint8_t actionParameterSize)  { DA_Message::actionParameterSize = actionParameterSize; };
 
     inline uint8_t* getActionParameter() { return actionParameter; };
     inline void setActionParameter(uint8_t* actionParameter) { 
-		if (actionParameterSize <= 0) {
-			ERROR("Incorrect parameter size, specify this first before assigning the actionParameter.");
+		if (this->actionParameterSize <= 0) {
 			return;
 		}
 
@@ -206,7 +206,7 @@ private:
 	ActionType actionType;
 	ActionStatus actionStatus;
 	uint8_t actionResultSize;
-	uint8_t actionResult[];
+	uint8_t* actionResult;
 
 public:
 	//    virtual void DoSomething();
@@ -227,20 +227,33 @@ public:
     virtual size_t Encode(uint8_t *buffer, size_t limit);
     static DAR_Message *Decode(uint8_t *buffer, size_t size);
 
-    ServiceType getServiceType() const;
-    void setServiceType(const ServiceType serviceType);
+    inline ServiceType getServiceType() const { return serviceType; };
+    inline void setServiceType(const ServiceType serviceType) { this->serviceType = serviceType; };
 
-	ActionType getActionType() const;
-    void setActionType(const ActionType actionType);
+	inline ActionType getActionType() const { return actionType; };
+    inline void setActionType(const ActionType actionType) { this->actionType = actionType; };
 
-	ActionStatus getActionStatus() const;
-    void setActionStatus(const ActionStatus actionStatus);
+	inline ActionStatus getActionStatus() const { return actionStatus; };
+    inline void setActionStatus(const ActionStatus actionStatus) { this->actionStatus = actionStatus; };
 
-	uint8_t getActionResultSize() const;
-    void setActionResultSize(const uint8_t actionResultSize);
+	inline uint8_t getActionResultSize() const { return actionResultSize; };
+    inline void setActionResultSize(const uint8_t actionResultSize) { this->actionResultSize = actionResultSize; };
 
-	uint8_t* getActionResult() const;
-    void setActionResult(const uint8_t actionResult[]);
+	inline uint8_t* getActionResult() const { return actionResult; };
+    inline void setActionResult(uint8_t* actionResult) {
+    	if (actionResultSize <= 0) {
+			return;
+		}
+
+		this->actionResult = new uint8_t[actionResultSize];
+		memcpy(this->actionResult, actionResult, actionResultSize);
+		};
+
+	~DAR_Message() { 
+    	if (actionResult != NULL) {
+    		delete[] actionResult;
+    	}
+    };
 };
 
 

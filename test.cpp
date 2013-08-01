@@ -128,6 +128,8 @@ void testDA() {
 	da.setServiceType(RTC);
 	da.setActionType(GET_VALUE);
 	da.setActionParameterSize(3);
+	assert(da.getActionParameterSize() == 3);
+
 	uint8_t array[3] = {4, 3, 2}; 
 	da.setActionParameter(array);
 
@@ -169,6 +171,65 @@ void testDA() {
 	cout << "[OK] Tests of decode/encode of DA" << std::endl;
 }
 
+/**
+	Test DAR Encoding/Decoding
+*/
+void testDAR() {
+
+	cout << "[..] Tests of decode/encode of DAR" << std::endl;
+
+	// Create a new message
+	DAR_Message dar = DAR_Message();
+	
+	dar.setServiceType(RTC);
+	dar.setActionType(GET_VALUE);
+	dar.setActionStatus(DONE);
+	dar.setActionResultSize(3);
+	assert(dar.getActionResultSize() == 3);
+
+	uint8_t array[3] = {4, 3, 2}; 
+	dar.setActionResult(array);
+
+	cout << dar.getServiceType() << std::endl;
+
+	// Encode a message 
+	uint8_t buffer[20];
+
+	size_t size = dar.Encode(buffer, sizeof(buffer));
+
+	cout << "size: " << std::dec << (int) size << std::endl;	
+
+	for (int i = 0 ; i < size ; i++) {
+		cout << i << " " << hex <<  (int) buffer[i] << std::endl;
+	}
+
+	// Attempt to decode a message from a buffer
+	Message *message = Message::Decode(buffer, size);
+
+	DAR_Message* v = dynamic_cast<DAR_Message*>(message);
+
+	if (v != NULL) {
+		cout << "decoded (service type): " << hex << (int) v->getServiceType() << endl;		
+		cout << "decoded (action type): " << hex << (int) v->getActionType() << endl;		
+		cout << "decoded (action status): " << hex << (int) v->getActionStatus() << endl;		
+		cout << "decoded (action result size): " << hex << (int) v->getActionResultSize() << endl;		
+	}
+
+	assert (v->getServiceType() == RTC);
+	assert (v->getActionType() == GET_VALUE);
+	assert (v->getActionStatus() == DONE);
+	assert (v->getActionResultSize() == 3);
+	// TODO add comparaison of the parameter
+
+	// Service Discovery Protocol
+	SDP sdp = SDP();
+	sdp.processMessage(v);
+
+	delete message;
+
+	cout << "[OK] Tests of decode/encode of DAR" << std::endl;
+}
+
 
 
 int main() {
@@ -183,8 +244,9 @@ int main() {
 
 	testDA();
 
+	cout << std::endl << std::endl;
 
-	// TODO
+	testDAR();
 
 }
 

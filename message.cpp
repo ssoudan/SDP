@@ -46,7 +46,7 @@ FSR_Message *FSR_Message::Decode(uint8_t *buffer, size_t size) {
 	return fsr;
 };
 
-DA_Message *DA_Message::Decode(const uint8_t *buffer, const size_t size) {
+DA_Message *DA_Message::Decode(uint8_t *buffer, size_t size) {
 	assert (buffer != NULL);
 
 	assert (size >= 4);
@@ -64,17 +64,39 @@ DA_Message *DA_Message::Decode(const uint8_t *buffer, const size_t size) {
 
 	assert (size >= 4 + psize);
 
-  	uint8_t* array = new uint8_t[psize];
-  	memcpy(array, &buffer[4], psize);
+ // 	uint8_t* array = new uint8_t[psize];
+ // 	memcpy(array, &buffer[4], psize);
 	    
-    da->setActionParameter(array);
+    da->setActionParameter(&buffer[4]);
 
 	return da;
 };
 
 DAR_Message *DAR_Message::Decode(uint8_t *buffer, size_t size) {
-	// TODO
-	return NULL;
+	assert (buffer != NULL);
+
+	assert (size >= 5);
+
+	DAR_Message *dar = new DAR_Message();
+
+	// Skip first byte
+
+	ServiceType serviceType = (ServiceType) buffer[1];
+	dar->setServiceType((ServiceType) serviceType);
+  	dar->setActionType((ActionType) buffer[2]);
+	dar->setActionStatus((ActionStatus) buffer[3]);
+
+  	const uint8_t psize = buffer[4];
+  	dar->setActionResultSize(psize);
+
+	assert (size >= 5 + psize);
+
+//  	uint8_t* array = new uint8_t[psize];
+// 	memcpy(array, &buffer[5], psize);
+	    
+    dar->setActionResult(&buffer[5]);
+
+	return dar;
 };
 
 Message *Message::Decode(uint8_t *buffer, size_t size) {
@@ -155,8 +177,11 @@ size_t DA_Message::Encode(uint8_t *buffer, size_t limit) {
 	// Parameter: ?
 
 	buffer[0] = DA;
+
 	buffer[1] = DA_Message::getServiceType();
+
 	buffer[2] = DA_Message::getActionType();
+
 	buffer[3] = size;
 
 	uint8_t *actionParameter = DA_Message::getActionParameter();
@@ -168,6 +193,39 @@ size_t DA_Message::Encode(uint8_t *buffer, size_t limit) {
 };
 
 size_t DAR_Message::Encode(uint8_t *buffer, size_t limit) {
-	// TODO
-	return NULL;
+
+	assert (buffer != NULL);
+
+	uint8_t size = DAR_Message::getActionResultSize();
+
+	if (limit < 5 + size) {
+		// Buffer too small;
+		ERROR("Buffer too small.");	
+		return 0;
+	}
+	
+	// Message type: 8 bits
+	// Service Type: 8 bits
+	// Action Type: 8 bits
+	// Action Status: 8 bits
+	// Result Size: 8 bits
+	// Result: ?
+
+	buffer[0] = DAR;
+
+	buffer[1] = DAR_Message::getServiceType();
+
+	buffer[2] = DAR_Message::getActionType();
+
+	buffer[3] = DAR_Message::getActionStatus();
+	
+	buffer[4] = size;
+
+	uint8_t *actionResult = DAR_Message::getActionResult();
+	for (int i = 0 ; i < size ; i++) {
+		buffer[5 + i] = actionResult[i];
+	}
+
+	return 5 + size;
+
 };
