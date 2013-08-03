@@ -8,6 +8,8 @@
 
 #include <XBee.h>
 //#include "Arduino.h"
+#include "enum.h"
+
 #include "message.h"
 #include "util.h"
 
@@ -40,12 +42,9 @@ typedef struct {
 	uint8_t (*callback)(uint8_t *in, size_t inSize, uint8_t *out, size_t outLimit);	
 } LocalServiceRecord;
 
-enum SDPState {UNKNOWN_STATE = 0, UNKNOWN_MESSAGE, FSR_RECEIVED, DA_RECEIVED, DAR_RECEIVED, FS_RECEIVED, 
-	XBEE_ASSOCIATED, XBEE_DISASSOCIATED, XBEE_UNKNOWN_MODEM_STATUS, XBEE_UNEXPECTED_MSG, XBEE_ERROR, XBEE_SUCCESS, XBEE_NOT_DELIVERED };
+using namespace ServiceDiscovery;
 
-enum RegistrationStatus {REGISTRATION_FAILED = 0, REGISTRATION_SUCCESS = 1};
-
-class SDP {
+class SDP : public MessageProcessor {
 	RemoteServiceRecord rsd[RSD_SIZE];
 	ServiceCallbackRecord scd[SCD_SIZE];
 	LocalServiceRecord lsd[LSD_SIZE];
@@ -88,6 +87,11 @@ class SDP {
 		inline XBeeAddress16 getLocal16() const { return local16; };
 		inline void setLocal16(const XBeeAddress16 local16) { this->local16 = local16; };
 
+		virtual SDPState processMessage(XBeeAddress64 &addr64, const FSR_Message *message);
+		virtual SDPState processMessage(XBeeAddress64 &addr64, const FS_Message *message);
+		virtual SDPState processMessage(XBeeAddress64 &addr64, DA_Message *message);
+		virtual SDPState processMessage(XBeeAddress64 &addr64, const DAR_Message *message);
+
 	private:
 		SDPState transmitPacket(XBeeAddress64 &addr64, uint8_t message[], size_t length);
 
@@ -102,14 +106,11 @@ class SDP {
 		XBeeAddress64 findService64(ServiceType sid); 
 		XBeeAddress16 findService16(ServiceType sid); 
 
-		SDPState processMessage(const XBeeAddress64 &addr64, const uint8_t *buffer, const size_t size);
-
-		SDPState processMessage(const XBeeAddress64 &addr64, const Message *message);
-		SDPState processMessage(const XBeeAddress64 &addr64, const FSR_Message *message);
-		SDPState processMessage(XBeeAddress64 &addr64, const FS_Message *message);
-		SDPState processMessage(XBeeAddress64 &addr64, DA_Message *message);
-		SDPState processMessage(const XBeeAddress64 &addr64, const DAR_Message *message);
+		SDPState processMessage(XBeeAddress64 &addr64, const uint8_t *buffer, const size_t size);
+		//SDPState processMessage(const XBeeAddress64 &addr64, const Message *message);		
 
 };
+
+
 
 #endif

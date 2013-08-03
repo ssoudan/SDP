@@ -6,6 +6,22 @@
 #include "message.h"
 #include "util.h"
 
+ServiceDiscovery::SDPState FS_Message::process(class MessageProcessor *sdp, XBeeAddress64 &addr64) {
+	return sdp->processMessage(addr64, this);
+}
+
+ServiceDiscovery::SDPState FSR_Message::process(class MessageProcessor *sdp, XBeeAddress64 &addr64) {
+	return sdp->processMessage(addr64, this);
+}
+
+ServiceDiscovery::SDPState DA_Message::process(class MessageProcessor *sdp, XBeeAddress64 &addr64) {
+	return sdp->processMessage(addr64, this);
+}
+
+ServiceDiscovery::SDPState DAR_Message::process(class MessageProcessor *sdp, XBeeAddress64 &addr64) {
+	return sdp->processMessage(addr64, this);
+}
+
 FS_Message *FS_Message::Decode(const uint8_t *buffer, const size_t size) {
 	ASSERT (buffer != NULL);
 

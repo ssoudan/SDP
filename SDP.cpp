@@ -128,6 +128,8 @@ SDPState SDP::readPackets() {
       //nss.println(xbee.getResponse().getErrorCode());
     	return XBEE_ERROR;
     }
+
+    return XBEE_NO_DATA;
 };
 
 
@@ -169,13 +171,13 @@ SDPState SDP::transmitPacket(XBeeAddress64 &addr64, uint8_t message[], size_t le
 
 };
 
-SDPState SDP::processMessage(const XBeeAddress64 &addr64, const uint8_t *buffer, const size_t size) {
+SDPState SDP::processMessage(XBeeAddress64 &addr64, const uint8_t *buffer, const size_t size) {
 
 	Message* message = Message::Decode(buffer, size);
 
 	if (message) {
 
-		SDPState ret = processMessage(addr64, message);
+		SDPState ret = message->process(static_cast<MessageProcessor*>(this), addr64);
 
 		delete message;
 
@@ -306,15 +308,15 @@ SDPState SDP::processMessage(XBeeAddress64 &addr64, const FS_Message *message) {
 	return FS_RECEIVED;
 };
 
-SDPState SDP::processMessage(const XBeeAddress64 &addr64, const Message *message) { 			
-#ifndef ARDUINO
-	cout << "message" << std::endl; 
-#endif
-	return UNKNOWN_STATE;
-};
+// SDPState SDP::processMessage(const XBeeAddress64 &addr64, const Message *message) { 			
+// #ifndef ARDUINO
+// 	cout << "message" << std::endl; 
+// #endif
+// 	return UNKNOWN_STATE;
+// };
 
 
-SDPState SDP::processMessage(const XBeeAddress64 &addr64, const FSR_Message *message) { 
+SDPState SDP::processMessage(XBeeAddress64 &addr64, const FSR_Message *message) { 
 #ifndef ARDUINO
 	cout << "fsr_message" << std::endl; 
 #endif
@@ -336,7 +338,7 @@ SDPState SDP::processMessage(const XBeeAddress64 &addr64, const FSR_Message *mes
 };
 
 
-SDPState SDP::processMessage(const XBeeAddress64 &addr64, const DAR_Message *message) { 
+SDPState SDP::processMessage(XBeeAddress64 &addr64, const DAR_Message *message) { 
 #ifndef ARDUINO
 	cout << "dar_message" << std::endl; 
 #endif

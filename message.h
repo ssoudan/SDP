@@ -6,8 +6,7 @@
 #ifndef MESSAGE_H_
 #define MESSAGE_H_
 
-
-
+#include "enum.h"
 
 #if defined(ARDUINO)
  	#include <XBee.h>
@@ -66,15 +65,7 @@ typedef uint16_t XBeeAddress16;
 #define DA 	3
 #define DAR 4
 
-namespace ServiceDiscovery {
-
-enum ServiceType { UNDEF_SERVICE = 0, SDP_RTC = 1, TEMPERATURE = 2 };
-
-enum ActionType { UNDEF_ACTION = 0, GET_VALUE = 1, SET_VALUE = 2 };
-
-enum ActionStatus { UNDEF_STATUS = 0, DONE = 1, NOT_FOUND = 2, NOT_DONE = 3, REQUESTED = 4, SEARCHING = 5, ERROR = 6 };
-
-}
+using namespace ServiceDiscovery;
 
 /**
 	Generic message class
@@ -85,9 +76,9 @@ public:
 	//    virtual void DoSomething();
     virtual size_t Encode(uint8_t *buffer, size_t limit) = 0;
     static Message *Decode(const uint8_t *buffer, const size_t size);
-};
 
-using namespace ServiceDiscovery;
+	virtual ServiceDiscovery::SDPState process(class MessageProcessor *sdp, XBeeAddress64 &addr64) = 0;
+};
 
 /**
 	Find Service Message
@@ -111,6 +102,8 @@ public:
     virtual size_t Encode(uint8_t *buffer, size_t limit);
     
     static FS_Message *Decode(const uint8_t *buffer, const size_t size);
+
+	virtual ServiceDiscovery::SDPState process(class MessageProcessor *sdp, XBeeAddress64 &addr64);
 
     inline ServiceType getServiceType() const {return serviceType; };
     inline void setServiceType(const ServiceType serviceType) { this->serviceType = serviceType; };
@@ -140,6 +133,8 @@ public:
 
     virtual size_t Encode(uint8_t *buffer, size_t limit);
     static FSR_Message *Decode(const uint8_t *buffer, const size_t size);
+
+	virtual ServiceDiscovery::SDPState process(class MessageProcessor *sdp, XBeeAddress64 &addr64);
 
     inline ServiceType getServiceType() const { return serviceType; };
     inline void setServiceType(const ServiceType serviceType) { this->serviceType = serviceType; } ;
@@ -180,6 +175,8 @@ public:
 
     virtual size_t Encode(uint8_t *buffer, size_t limit);
     static DA_Message *Decode(const uint8_t *buffer, const size_t size);
+
+	virtual ServiceDiscovery::SDPState process(class MessageProcessor *sdp, XBeeAddress64 &addr64);
 
     inline ServiceType getServiceType() const { return serviceType; };
     inline void setServiceType(const ServiceType serviceType) { this->serviceType = serviceType; };
@@ -234,9 +231,11 @@ public:
 		setActionStatus(actionStatus);
 		setActionResultSize(0);		
 	};
-
+	
     virtual size_t Encode(uint8_t *buffer, size_t limit);
     static DAR_Message *Decode(const uint8_t *buffer, const size_t size);
+
+	virtual ServiceDiscovery::SDPState process(class MessageProcessor *sdp, XBeeAddress64 &addr64);
 
     inline ServiceType getServiceType() const { return serviceType; };
     inline void setServiceType(const ServiceType serviceType) { this->serviceType = serviceType; };
@@ -267,5 +266,14 @@ public:
     };
 };
 
+
+
+class MessageProcessor {
+public:		
+	virtual SDPState processMessage(XBeeAddress64 &addr64, const FSR_Message *message) = 0;
+	virtual SDPState processMessage(XBeeAddress64 &addr64, const FS_Message *message) = 0;
+	virtual SDPState processMessage(XBeeAddress64 &addr64, DA_Message *message) = 0;
+	virtual SDPState processMessage(XBeeAddress64 &addr64, const DAR_Message *message) = 0;
+};
 
 #endif /* MESSAGE_H_ */
