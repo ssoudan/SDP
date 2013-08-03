@@ -5,6 +5,8 @@
 
 #include "SDP.h"
 
+#define INFO(x) Serial.println(x)
+
 RemoteServiceRecord *SDP::findRemoteService(ServiceType sid) {
 
 	for (int i = 0 ; i < RSD_SIZE ; i++) {		
@@ -101,7 +103,7 @@ SDPState SDP::readPackets() {
         //     // we got it (obviously) but sender didn't get an ACK
         //     flashLed(errorLed, 2, 20);
         // }
-
+        INFO("You have got a message!");
         return processMessage(rx.getRemoteAddress64(), rx.getData(), rx.getDataLength());
 
       } else if (xbee->getResponse().getApiId() == MODEM_STATUS_RESPONSE) {
@@ -241,18 +243,19 @@ SDPState SDP::processMessage(XBeeAddress64 &addr64, DA_Message *message) {
 			if (size > 0) {
 				// Transmit
 				transmitPacket(addr64, buffer, size);
-
+				INFO("All good, action executed and message sent");
 				return DA_RECEIVED;
 			} else {
 				// Failed to build response
+				ERROR("Failed to build the response");
 				return DA_RECEIVED;
 			}
-
-			return DA_RECEIVED;
 		} 
-		// else send an error			    
+		// else send an error
+		ERROR("Execution failed");
 	} 
 
+	INFO("Callback not found");
 	// Send ERROR message		
 	DAR_Message response = 	DAR_Message(sid, aid, NOT_FOUND);
 	uint8_t buffer[5];
@@ -263,17 +266,13 @@ SDPState SDP::processMessage(XBeeAddress64 &addr64, DA_Message *message) {
 	if (size > 0) {
 		// Transmit
 		transmitPacket(addr64, buffer, size);
-
+		INFO("Sent action NOT_FOUND message");
 		return DA_RECEIVED;
 	} else {
 		// Failed to build response
+		ERROR("Failed to send NOT_FOUND message");
 		return DA_RECEIVED;
 	}
-
-	// delete what has to be deleted
-	// nothing
-
-	return DA_RECEIVED;			
 };
 
 SDPState SDP::processMessage(XBeeAddress64 &addr64, const FS_Message *message) { 
@@ -352,6 +351,7 @@ SDPState SDP::processMessage(XBeeAddress64 &addr64, const DAR_Message *message) 
 		{
 			ServiceCallbackRecord *scd = findServiceCallback(sid, aid); 
 			if (scd) {
+				INFO("Callback found, calling it...");
 				scd->callback(message->getActionResult(), message->getActionResultSize());
 				return DAR_RECEIVED;
 			} else {
@@ -410,14 +410,16 @@ ActionStatus SDP::doAction(ServiceType sid, ActionType actionType,
 			// store the result somewhere
 			if (callback) {
 				callback(buffer, size);
+				ERROR("Local action DONE");
 				return DONE;
 			} else {
-				ERROR("invalid callback");
+				ERROR("Invalid callback for local action");
 				return NOT_DONE;
 			}
 		}
 
 		// action failed
+		ERROR("Local action failed");
 		return NOT_DONE;		
 	}
 
@@ -435,13 +437,12 @@ ActionStatus SDP::doAction(ServiceType sid, ActionType actionType,
 			scd->aid = actionType;
 			scd->callback = callback;
 		} else {			
-			ERROR("Not seat to store the callback");
-
+			ERROR("No seat to store the callback");
 			return NOT_DONE;
 		}		
 
 		// Send the request
-		DA_Message message = 	DA_Message(sid, actionType);
+		DA_Message message = DA_Message(sid, actionType);
 		message.setActionParameterSize(actionParameterSize);
 		message.setActionParameter(actionParameter);
 
@@ -454,6 +455,7 @@ ActionStatus SDP::doAction(ServiceType sid, ActionType actionType,
 		// send the request
 		transmitPacket(addr64, buffer, size);
 
+		INFO("Action requested");
 		return REQUESTED;
 	}
 
@@ -469,6 +471,7 @@ ActionStatus SDP::doAction(ServiceType sid, ActionType actionType,
 
 	transmitPacket(bcast64, buffer, size);
 
+	INFO("Service requested");
 	return SEARCHING;
 };
 
