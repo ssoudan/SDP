@@ -32,10 +32,10 @@ uint32_t convertArraytoUint32(const uint8_t byteArray[]) {
 
   uint32_t value;
 
-  value = ( (byteArray[0] << 24) 
-  			+ (byteArray[1] << 16) 
-            + (byteArray[2] << 8) 
-            + (byteArray[3] ) );
+  value = (((uint32_t) byteArray[0] << 24) 
+  			+ ((uint32_t) byteArray[1] << 16) 
+        + ((uint32_t) byteArray[2] << 8) 
+        + ((uint32_t) byteArray[3] ));
 
   return value;
 };

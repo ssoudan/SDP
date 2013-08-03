@@ -4,13 +4,12 @@
 */
 
 #include "message.h"
-#include <assert.h> 
 #include "util.h"
 
-FS_Message *FS_Message::Decode(uint8_t *buffer, size_t size) {
-	assert (buffer != NULL);
+FS_Message *FS_Message::Decode(const uint8_t *buffer, const size_t size) {
+	ASSERT (buffer != NULL);
 
-	assert (size >= 2);
+	ASSERT (size >= 2);
 
 	FS_Message *fs = new FS_Message();
 
@@ -22,10 +21,10 @@ FS_Message *FS_Message::Decode(uint8_t *buffer, size_t size) {
 	return fs;
 };
 
-FSR_Message *FSR_Message::Decode(uint8_t *buffer, size_t size) {
-	assert (buffer != NULL);
+FSR_Message *FSR_Message::Decode(const uint8_t *buffer, const size_t size) {
+	ASSERT (buffer != NULL);
 
-	assert (size >= 1 + 1 + 4 + 4 + 2);
+	ASSERT (size >= 1 + 1 + 4 + 4 + 2);
 
 	FSR_Message *fsr = new FSR_Message();
 
@@ -46,10 +45,10 @@ FSR_Message *FSR_Message::Decode(uint8_t *buffer, size_t size) {
 	return fsr;
 };
 
-DA_Message *DA_Message::Decode(uint8_t *buffer, size_t size) {
-	assert (buffer != NULL);
+DA_Message *DA_Message::Decode(const uint8_t *buffer, const size_t size) {
+	ASSERT (buffer != NULL);
 
-	assert (size >= 4);
+	ASSERT (size >= 4);
 
 	DA_Message *da = new DA_Message();
 
@@ -62,7 +61,7 @@ DA_Message *DA_Message::Decode(uint8_t *buffer, size_t size) {
   	const uint8_t psize = buffer[3];
   	da->setActionParameterSize(psize);
 
-	assert (size >= 4 + psize);
+	ASSERT (size >= 4 + psize);
 
  // 	uint8_t* array = new uint8_t[psize];
  // 	memcpy(array, &buffer[4], psize);
@@ -72,10 +71,10 @@ DA_Message *DA_Message::Decode(uint8_t *buffer, size_t size) {
 	return da;
 };
 
-DAR_Message *DAR_Message::Decode(uint8_t *buffer, size_t size) {
-	assert (buffer != NULL);
+DAR_Message *DAR_Message::Decode(const uint8_t *buffer, const size_t size) {
+	ASSERT (buffer != NULL);
 
-	assert (size >= 5);
+	ASSERT (size >= 5);
 
 	DAR_Message *dar = new DAR_Message();
 
@@ -89,7 +88,7 @@ DAR_Message *DAR_Message::Decode(uint8_t *buffer, size_t size) {
   	const uint8_t psize = buffer[4];
   	dar->setActionResultSize(psize);
 
-	assert (size >= 5 + psize);
+	ASSERT (size >= 5 + psize);
 
 //  	uint8_t* array = new uint8_t[psize];
 // 	memcpy(array, &buffer[5], psize);
@@ -99,7 +98,7 @@ DAR_Message *DAR_Message::Decode(uint8_t *buffer, size_t size) {
 	return dar;
 };
 
-Message *Message::Decode(uint8_t *buffer, size_t size) {
+Message *Message::Decode(const uint8_t *buffer, const size_t size) {
     if (size < 1) return 0; /* or throw some exception */
 	switch(buffer[0]) {
 		case FS: return FS_Message::Decode(buffer, size);
@@ -111,7 +110,7 @@ Message *Message::Decode(uint8_t *buffer, size_t size) {
 };
 
 size_t FS_Message::Encode(uint8_t *buffer, size_t limit) {
-	assert (buffer != NULL);
+	ASSERT (buffer != NULL);
 		
 	if (limit < 2)
 		// Buffer too small;
@@ -128,7 +127,7 @@ size_t FS_Message::Encode(uint8_t *buffer, size_t limit) {
 };
 
 size_t FSR_Message::Encode(uint8_t *buffer, size_t limit) {
-	assert (buffer != NULL);
+	ASSERT (buffer != NULL);
 		
 	if (limit < 1 + 1 + 4 + 4 + 2) {
 		// Buffer too small;
@@ -160,7 +159,7 @@ size_t FSR_Message::Encode(uint8_t *buffer, size_t limit) {
 
 size_t DA_Message::Encode(uint8_t *buffer, size_t limit) {
 
-	assert (buffer != NULL);
+	ASSERT (buffer != NULL);
 
 	uint8_t size = DA_Message::getActionParameterSize();
 
@@ -194,7 +193,7 @@ size_t DA_Message::Encode(uint8_t *buffer, size_t limit) {
 
 size_t DAR_Message::Encode(uint8_t *buffer, size_t limit) {
 
-	assert (buffer != NULL);
+	ASSERT (buffer != NULL);
 
 	uint8_t size = DAR_Message::getActionResultSize();
 

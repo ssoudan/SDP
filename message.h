@@ -6,13 +6,15 @@
 #ifndef MESSAGE_H_
 #define MESSAGE_H_
 
-//#include <XBee.h>
 
 
-#ifndef ARDUINO
-	#include <iostream> 
-#else 
- 	#include <iostream> 
+
+#if defined(ARDUINO)
+ 	#include <XBee.h>
+  	#include <stdint.h>
+ 	#include <string.h>
+ 	#include "new.h"
+ 	#define ASSERT(x) {}
  	//#include <stdlib.h>
 	//#include <stdint.h>
 #endif
@@ -27,11 +29,10 @@
  #define size_t uint8_t
 #endif
 
-#ifndef XBeeAddress16
- typedef uint16_t XBeeAddress16;
-#endif
+typedef uint16_t XBeeAddress16;
 
-#ifndef XBeeAddress64
+#ifndef XBee_h
+
  class XBeeAddress64 {
  private:
  	uint64_t addr;
@@ -53,7 +54,7 @@
  	};
 
  	inline void setLsb(const uint32_t lsb) {
- 		addr = (addr & 0xffffffff00000000) + lsb;
+ 		addr = (addr & 0xffffffff00000000ll) + lsb;
  	};
 
  };
@@ -65,11 +66,15 @@
 #define DA 	3
 #define DAR 4
 
-enum ServiceType { UNDEF_SERVICE = 0, RTC = 1, TEMPERATURE = 2 };
+namespace ServiceDiscovery {
+
+enum ServiceType { UNDEF_SERVICE = 0, SDP_RTC = 1, TEMPERATURE = 2 };
 
 enum ActionType { UNDEF_ACTION = 0, GET_VALUE = 1, SET_VALUE = 2 };
 
 enum ActionStatus { UNDEF_STATUS = 0, DONE = 1, NOT_FOUND = 2, NOT_DONE = 3 };
+
+}
 
 /**
 	Generic message class
@@ -79,9 +84,10 @@ class Message {
 public:
 	//    virtual void DoSomething();
     virtual size_t Encode(uint8_t *buffer, size_t limit) = 0;
-    static Message *Decode(uint8_t *buffer, size_t size);
+    static Message *Decode(const uint8_t *buffer, const size_t size);
 };
 
+using namespace ServiceDiscovery;
 
 /**
 	Find Service Message
@@ -94,12 +100,12 @@ public:
 	//    virtual void DoSomething();
 	
 	FS_Message() {
-		setServiceType(UNDEF_SERVICE);
+		setServiceType(ServiceDiscovery::UNDEF_SERVICE);
 	};
 
     virtual size_t Encode(uint8_t *buffer, size_t limit);
     
-    static FS_Message *Decode(uint8_t *buffer, size_t size);
+    static FS_Message *Decode(const uint8_t *buffer, const size_t size);
 
     inline ServiceType getServiceType() const {return serviceType; };
     inline void setServiceType(const ServiceType serviceType) { this->serviceType = serviceType; };
@@ -118,7 +124,7 @@ private:
 
 public:
 	FSR_Message() {
-		setServiceType(UNDEF_SERVICE);		
+		setServiceType(ServiceDiscovery::UNDEF_SERVICE);		
 	};
 
 	FSR_Message(ServiceType serviceType) {
@@ -128,7 +134,7 @@ public:
 	//	virtual void DoSomething();
 
     virtual size_t Encode(uint8_t *buffer, size_t limit);
-    static FSR_Message *Decode(uint8_t *buffer, size_t size);
+    static FSR_Message *Decode(const uint8_t *buffer, const size_t size);
 
     inline ServiceType getServiceType() const { return serviceType; };
     inline void setServiceType(const ServiceType serviceType) { this->serviceType = serviceType; } ;
@@ -154,8 +160,8 @@ private:
 public:
 	//    virtual void DoSomething();
 	DA_Message() {
-		setServiceType(UNDEF_SERVICE);	
-		setActionType(UNDEF_ACTION);
+		setServiceType(ServiceDiscovery::UNDEF_SERVICE);	
+		setActionType(ServiceDiscovery::UNDEF_ACTION);
 		setActionParameterSize(0);		
 		setActionParameter(NULL);
 	};
@@ -168,7 +174,7 @@ public:
 	};
 
     virtual size_t Encode(uint8_t *buffer, size_t limit);
-    static DA_Message *Decode(uint8_t *buffer, size_t size);
+    static DA_Message *Decode(const uint8_t *buffer, const size_t size);
 
     inline ServiceType getServiceType() const { return serviceType; };
     inline void setServiceType(const ServiceType serviceType) { this->serviceType = serviceType; };
@@ -180,7 +186,7 @@ public:
     inline void setActionParameterSize(const uint8_t actionParameterSize)  { DA_Message::actionParameterSize = actionParameterSize; };
 
     inline uint8_t* getActionParameter() { return actionParameter; };
-    inline void setActionParameter(uint8_t* actionParameter) { 
+    inline void setActionParameter(const uint8_t* actionParameter) { 
 		if (this->actionParameterSize <= 0) {
 			return;
 		}
@@ -211,9 +217,9 @@ private:
 public:
 	//    virtual void DoSomething();
 	DAR_Message() {
-		setServiceType(UNDEF_SERVICE);	
-		setActionType(UNDEF_ACTION);
-		setActionStatus(UNDEF_STATUS);
+		setServiceType(ServiceDiscovery::UNDEF_SERVICE);	
+		setActionType(ServiceDiscovery::UNDEF_ACTION);
+		setActionStatus(ServiceDiscovery::UNDEF_STATUS);
 		setActionResultSize(0);		
 	};
 
@@ -225,7 +231,7 @@ public:
 	};
 
     virtual size_t Encode(uint8_t *buffer, size_t limit);
-    static DAR_Message *Decode(uint8_t *buffer, size_t size);
+    static DAR_Message *Decode(const uint8_t *buffer, const size_t size);
 
     inline ServiceType getServiceType() const { return serviceType; };
     inline void setServiceType(const ServiceType serviceType) { this->serviceType = serviceType; };
@@ -240,7 +246,7 @@ public:
     inline void setActionResultSize(const uint8_t actionResultSize) { this->actionResultSize = actionResultSize; };
 
 	inline uint8_t* getActionResult() const { return actionResult; };
-    inline void setActionResult(uint8_t* actionResult) {
+    inline void setActionResult(const uint8_t* actionResult) {
     	if (actionResultSize <= 0) {
 			return;
 		}
