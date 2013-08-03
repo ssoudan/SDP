@@ -17,14 +17,22 @@ using namespace std;
 #endif
 
 #define RSD_SIZE 20
+#define SCD_SIZE 40
 #define LSD_SIZE 20
 #define ACTION_BUFFER_SIZE 20
+#define MESSAGE_BUFFER_SIZE 30
 
 typedef struct {
 	ServiceType sid;
 	XBeeAddress64 address64;
 	XBeeAddress16 address16;	
 } RemoteServiceRecord;
+
+typedef struct {
+	ServiceType sid;
+	ActionType aid;
+	void (*callback)(uint8_t*, uint8_t);	
+} ServiceCallbackRecord;
 
 typedef struct {
 	ServiceType sid;
@@ -39,7 +47,10 @@ enum RegistrationStatus {REGISTRATION_FAILED = 0, REGISTRATION_SUCCESS = 1};
 
 class SDP {
 	RemoteServiceRecord rsd[RSD_SIZE];
+	ServiceCallbackRecord scd[SCD_SIZE];
 	LocalServiceRecord lsd[LSD_SIZE];
+	XBeeAddress64 local64;
+	XBeeAddress16 local16;
 	XBee *xbee;
 
 	public: 
@@ -55,21 +66,36 @@ class SDP {
 				LocalServiceRecord record = { UNDEF_SERVICE, UNDEF_ACTION, 0};
 				lsd[i] = record;
 			}
+
+			for (int i = 0 ; i < SCD_SIZE ; i++) {
+				ServiceCallbackRecord record = { UNDEF_SERVICE, UNDEF_ACTION, NULL};
+				scd[i] = record;
+			}
 		};
 
 		ActionStatus doAction(ServiceType sid, ActionType actionType, 
 			uint8_t actionParameterSize,
-			uint8_t actionParameter[]);
+			uint8_t actionParameter[],
+			void (*callback)(uint8_t*, uint8_t));
 
 		RegistrationStatus registerService(ServiceType sid, ActionType actionType, 
 			uint8_t (*callback)(uint8_t *in, size_t inSize, uint8_t *out, size_t outLimit));
 		
 		SDPState readPackets();
-		SDPState transmitPacket(XBeeAddress64 &addr64, uint8_t message[], size_t length);
+
+		inline XBeeAddress64 getLocal64() const { return local64; };
+		inline void setLocal64(const XBeeAddress64 local64) { this->local64 = local64; };
+		inline XBeeAddress16 getLocal16() const { return local16; };
+		inline void setLocal16(const XBeeAddress16 local16) { this->local16 = local16; };
 
 	private:
+		SDPState transmitPacket(XBeeAddress64 &addr64, uint8_t message[], size_t length);
+
 		RemoteServiceRecord *findRemoteService(ServiceType sid); 		
 		LocalServiceRecord *findLocalService(ServiceType sid, ActionType aid); 
+		LocalServiceRecord *findLocalService(ServiceType sid);
+		ServiceCallbackRecord *findServiceCallback(ServiceType sid, ActionType aid); 
+		ServiceCallbackRecord *findEmptyServiceCallbackRecord();
 		RemoteServiceRecord *findEmptyRemoteServiceRecord();
 		LocalServiceRecord *findEmptyLocalServiceRecord();
 
@@ -78,109 +104,11 @@ class SDP {
 
 		SDPState processMessage(const XBeeAddress64 &addr64, const uint8_t *buffer, const size_t size);
 
-		inline SDPState processMessage(const XBeeAddress64 &addr64, const Message *message) { 			
-#ifndef ARDUINO
-			cout << "message" << std::endl; 
-#endif
-			return UNKNOWN_STATE;
-		};
-		inline SDPState processMessage(const XBeeAddress64 &addr64, const FSR_Message *message) { 
-#ifndef ARDUINO
-			cout << "fsr_message" << std::endl; 
-#endif
-	
-			// Update records with the service
-
-			return FSR_RECEIVED;
-		};
-		inline SDPState processMessage(const XBeeAddress64 &addr64, const FS_Message *message) { 
-#ifndef ARDUINO			
-			cout << "fs_message" << std::endl; 
-#endif
-
-			// TODO find the service if available and respond to the requester
-
-			return FS_RECEIVED;
-		};
-		inline SDPState processMessage(XBeeAddress64 &addr64, DA_Message *message) { 
-#ifndef ARDUINO
-			cout << "da_message" << std::endl; 
-#endif		
-			ServiceType sid = message->getServiceType();
-			ActionType aid = message->getActionType();
-
-			// Find the service locally, 
-			LocalServiceRecord* record = SDP::findLocalService(sid, aid); 
-
-			size_t size = 0;
-
-			// FOUND?
-			if (record && record->callback) {				
-				// prepare the call
-				uint8_t out[ACTION_BUFFER_SIZE];
-
-				// call the callback,
-				size = (*record->callback)(message->getActionParameter(), 
-												  message->getActionParameterSize(), 
-												  out, 
-												  ACTION_BUFFER_SIZE);
-				if (size > 0) {
-					// send the result
-					DAR_Message response = 	DAR_Message(sid, aid, DONE);
-					uint8_t buffer[size + 5];
-
-					// override size
-					size = response.Encode(buffer, sizeof(buffer));
-
-					if (size > 0) {
-						// Transmit
-						transmitPacket(addr64, buffer, size);
-
-						return DA_RECEIVED;
-					} else {
-						// Failed to build response
-						return DA_RECEIVED;
-					}
-
-					return DA_RECEIVED;
-				} 
-				// else send an error			    
-			} 
-
-			// Send ERROR message		
-			DAR_Message response = 	DAR_Message(sid, aid, NOT_FOUND);
-			uint8_t buffer[5];
-
-			// override size
-			size = response.Encode(buffer, sizeof(buffer));
-
-			if (size > 0) {
-				// Transmit
-				// TODO
-				transmitPacket(addr64, buffer, size);
-
-				return DA_RECEIVED;
-			} else {
-				// Failed to build response
-				return DA_RECEIVED;
-			}
-
-			// delete what has to be deleted
-			// TODO 
-
-			return DA_RECEIVED;			
-		};
-		inline SDPState processMessage(const XBeeAddress64 &addr64, const DAR_Message *message) { 
-#ifndef ARDUINO
-			cout << "dar_message" << std::endl; 
-#endif
-
-			// TODO decode the result, return it to the local action requester
-
-			return DAR_RECEIVED;
-		};
-
-
+		SDPState processMessage(const XBeeAddress64 &addr64, const Message *message);
+		SDPState processMessage(const XBeeAddress64 &addr64, const FSR_Message *message);
+		SDPState processMessage(XBeeAddress64 &addr64, const FS_Message *message);
+		SDPState processMessage(XBeeAddress64 &addr64, DA_Message *message);
+		SDPState processMessage(const XBeeAddress64 &addr64, const DAR_Message *message);
 
 };
 

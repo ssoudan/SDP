@@ -72,7 +72,7 @@ enum ServiceType { UNDEF_SERVICE = 0, SDP_RTC = 1, TEMPERATURE = 2 };
 
 enum ActionType { UNDEF_ACTION = 0, GET_VALUE = 1, SET_VALUE = 2 };
 
-enum ActionStatus { UNDEF_STATUS = 0, DONE = 1, NOT_FOUND = 2, NOT_DONE = 3 };
+enum ActionStatus { UNDEF_STATUS = 0, DONE = 1, NOT_FOUND = 2, NOT_DONE = 3, REQUESTED = 4, SEARCHING = 5, ERROR = 6 };
 
 }
 
@@ -102,6 +102,11 @@ public:
 	FS_Message() {
 		setServiceType(ServiceDiscovery::UNDEF_SERVICE);
 	};
+
+	FS_Message(ServiceType sid) {
+		setServiceType(sid);
+	};
+
 
     virtual size_t Encode(uint8_t *buffer, size_t limit);
     
