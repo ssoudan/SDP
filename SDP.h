@@ -25,6 +25,16 @@ using namespace std;
 #define LSD_SIZE 10
 #define ACTION_BUFFER_SIZE 10
 
+/***************************************
+TODO:
+ - detect local address
+ - test with more than one service
+ - test with more than two nodes
+ - test robustness
+ - introduce timeout in case the service provider died
+ - extend the library of service/actions 
+***************************************/
+
 typedef struct {
 	ServiceType sid;
 	XBeeAddress64 address64;

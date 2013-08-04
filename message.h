@@ -20,8 +20,8 @@
 
 #define INFO(x) Serial.println(x)
 //#define INFO(x) 
-#define ERROR(x) Serial.println(x)
-//#define ERROR(x) 
+//#define ERROR(x) Serial.println(x)
+#define ERROR(x) 
 
 #ifndef size_t
  #define size_t uint8_t
