@@ -1,22 +1,30 @@
 #include <new.h>
+#include <Arduino.h>
+
+#define INFO(x) {}
+//#define INFO(x) Serial.println(x)
 
 void * operator new(size_t size)
 {
+  INFO("new");
   return malloc(size);
 }
 
 void * operator new[](size_t size)
 {
+  INFO("new[]");
   return malloc(size);
 }
 
 void operator delete(void * ptr)
 {
+  INFO("del");
   free(ptr);
 }
 
 void operator delete[](void * ptr)
 {
+  INFO("del[]");
   free(ptr);
 }
 

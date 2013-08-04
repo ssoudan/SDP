@@ -18,11 +18,10 @@
 	//#include <stdint.h>
 #endif
 
-#ifndef ARDUINO 
-#define ERROR(x) do { printf(x); printf("\n"); } while (0)
-#else
-#define ERROR(x) // Nothing
-#endif
+//#define INFO(x) Serial.println(x)
+#define INFO(x) 
+//#define ERROR(x) Serial.println(x)
+#define ERROR(x) 
 
 #ifndef size_t
  #define size_t uint8_t
@@ -66,6 +65,9 @@ typedef uint16_t XBeeAddress16;
 #define DAR 4
 
 using namespace ServiceDiscovery;
+
+#define FS_MESSAGE_SIZE 2
+#define FSR_MESSAGE_SIZE (1 + 1 + 4 + 4 /*+ 2*/)
 
 /**
 	Generic message class

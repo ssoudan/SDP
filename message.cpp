@@ -25,9 +25,14 @@ ServiceDiscovery::SDPState DAR_Message::process(class MessageProcessor *sdp, XBe
 FS_Message *FS_Message::Decode(const uint8_t *buffer, const size_t size) {
 	ASSERT (buffer != NULL);
 
-	ASSERT (size >= 2);
+	ASSERT (size >= FS_MESSAGE_SIZE);
 
 	FS_Message *fs = new FS_Message();
+
+	if (!fs) {
+		ERROR("out of mem");
+		return NULL;
+	}
 
 	// Skip first byte
 
@@ -40,9 +45,14 @@ FS_Message *FS_Message::Decode(const uint8_t *buffer, const size_t size) {
 FSR_Message *FSR_Message::Decode(const uint8_t *buffer, const size_t size) {
 	ASSERT (buffer != NULL);
 
-	ASSERT (size >= 1 + 1 + 4 + 4 + 2);
+	ASSERT (size >= FSR_MESSAGE_SIZE);
 
 	FSR_Message *fsr = new FSR_Message();
+
+	if (!fsr) {
+		ERROR("out of mem");
+		return NULL;
+	}
 
 	// Skip first byte
 
@@ -54,9 +64,9 @@ FSR_Message *FSR_Message::Decode(const uint8_t *buffer, const size_t size) {
  	addr64.setLsb(convertArraytoUint32(&buffer[1 + 1 + 4]));
     fsr->setAddress64(addr64);
 
-    XBeeAddress16 addr16 = convertArraytoUint16(&buffer[1 + 1 + 4 + 4]);
+    //XBeeAddress16 addr16 = convertArraytoUint16(&buffer[1 + 1 + 4 + 4]);
     
-    fsr->setAddress16(addr16);
+    //fsr->setAddress16(addr16);
 
 	return fsr;
 };
@@ -67,6 +77,11 @@ DA_Message *DA_Message::Decode(const uint8_t *buffer, const size_t size) {
 	ASSERT (size >= 4);
 
 	DA_Message *da = new DA_Message();
+
+	if (!da) {
+		ERROR("out of mem");
+		return NULL;
+	}
 
 	// Skip first byte
 
@@ -88,20 +103,29 @@ DA_Message *DA_Message::Decode(const uint8_t *buffer, const size_t size) {
 };
 
 DAR_Message *DAR_Message::Decode(const uint8_t *buffer, const size_t size) {
+
+	INFO("DARdec");
 	ASSERT (buffer != NULL);
 
 	ASSERT (size >= 5);
 
+  	const uint8_t psize = buffer[4];
+
+	INFO("psi");
+	INFO((int) psize);
+
 	DAR_Message *dar = new DAR_Message();
 
-	// Skip first byte
+	if (!dar) {
+		ERROR("out of mem");
+		return NULL;
+	}
 
-	ServiceType serviceType = (ServiceType) buffer[1];
-	dar->setServiceType((ServiceType) serviceType);
+	// Skip first byte
+	
+	dar->setServiceType((ServiceType) buffer[1]);
   	dar->setActionType((ActionType) buffer[2]);
 	dar->setActionStatus((ActionStatus) buffer[3]);
-
-  	const uint8_t psize = buffer[4];
   	dar->setActionResultSize(psize);
 
 	ASSERT (size >= 5 + psize);
@@ -115,12 +139,23 @@ DAR_Message *DAR_Message::Decode(const uint8_t *buffer, const size_t size) {
 };
 
 Message *Message::Decode(const uint8_t *buffer, const size_t size) {
-    if (size < 1) return 0; /* or throw some exception */
+    INFO("MSGdec");
+    if (size < 1) 
+    	return 0; /* or throw some exception */
+
 	switch(buffer[0]) {
-		case FS: return FS_Message::Decode(buffer, size);
-		case FSR: return FSR_Message::Decode(buffer, size);
-		case DA: return DA_Message::Decode(buffer, size);
-		case DAR: return DAR_Message::Decode(buffer, size);
+		case FS: 
+		INFO("FS");
+		return FS_Message::Decode(buffer, size);
+		case FSR: 
+		INFO("FSR");
+		return FSR_Message::Decode(buffer, size);
+		case DA: 
+		INFO("DA");
+		return DA_Message::Decode(buffer, size);
+		case DAR: 
+		INFO("DAR");
+		return DAR_Message::Decode(buffer, size);
     default: return 0; // or throw an exception
 	}
 };
@@ -128,7 +163,7 @@ Message *Message::Decode(const uint8_t *buffer, const size_t size) {
 size_t FS_Message::Encode(uint8_t *buffer, size_t limit) {
 	ASSERT (buffer != NULL);
 		
-	if (limit < 2)
+	if (limit < FS_MESSAGE_SIZE)
 		// Buffer too small;
 		return 0;
 	
@@ -139,13 +174,13 @@ size_t FS_Message::Encode(uint8_t *buffer, size_t limit) {
 
 	buffer[1] = FS_Message::getServiceType();
 
-	return 2;
+	return FS_MESSAGE_SIZE;
 };
 
 size_t FSR_Message::Encode(uint8_t *buffer, size_t limit) {
 	ASSERT (buffer != NULL);
 		
-	if (limit < 1 + 1 + 4 + 4 + 2) {
+	if (limit < FSR_MESSAGE_SIZE) {
 		// Buffer too small;
 		ERROR("Buffer too small.");	
 		return 0;
@@ -156,7 +191,7 @@ size_t FSR_Message::Encode(uint8_t *buffer, size_t limit) {
 	// addr64: 64 bits
 	//  - MSB (32 bit)
 	//  - LSB (32 bit)
-	// addr16: 16 bits
+	// <strike>addr16: 16 bits</strike>
 
 	buffer[0] = FSR;
 	
@@ -167,10 +202,10 @@ size_t FSR_Message::Encode(uint8_t *buffer, size_t limit) {
 	convertUint32toArray(addr64.getMsb(), &buffer[1 + 1]);
 	convertUint32toArray(addr64.getLsb(), &buffer[1 + 1 + 4]);
 
-	XBeeAddress16 addr16 = FSR_Message::getAddress16();
-	convertUint16toArray(addr16, &buffer[1 + 1 + 4 + 4]);
+	//XBeeAddress16 addr16 = FSR_Message::getAddress16();
+	//convertUint16toArray(addr16, &buffer[1 + 1 + 4 + 4]);
 
-	return 1 + 1 + 4 + 4 + 2;
+	return FSR_MESSAGE_SIZE;
 };
 
 size_t DA_Message::Encode(uint8_t *buffer, size_t limit) {

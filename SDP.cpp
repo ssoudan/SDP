@@ -5,7 +5,6 @@
 
 #include "SDP.h"
 
-#define INFO(x) Serial.println(x)
 
 RemoteServiceRecord *SDP::findRemoteService(ServiceType sid) {
 
@@ -15,7 +14,7 @@ RemoteServiceRecord *SDP::findRemoteService(ServiceType sid) {
 	}
 
 	return NULL;
-};
+}; 
 
 ServiceCallbackRecord *SDP::findServiceCallback(ServiceType sid, ActionType aid) {
 	for (int i = 0 ; i < SCD_SIZE ; i++) {		
@@ -103,7 +102,9 @@ SDPState SDP::readPackets() {
         //     // we got it (obviously) but sender didn't get an ACK
         //     flashLed(errorLed, 2, 20);
         // }
-        INFO("You have got a message!");
+        INFO("new msg!");
+        INFO((int) rx.getDataLength());
+        INFO("bytes");
         return processMessage(rx.getRemoteAddress64(), rx.getData(), rx.getDataLength());
 
       } else if (xbee->getResponse().getApiId() == MODEM_STATUS_RESPONSE) {
@@ -176,16 +177,16 @@ SDPState SDP::transmitPacket(XBeeAddress64 &addr64, uint8_t message[], size_t le
 SDPState SDP::processMessage(XBeeAddress64 &addr64, const uint8_t *buffer, const size_t size) {
 
 	Message* message = Message::Decode(buffer, size);
-
+	INFO("Msg decoded");
 	if (message) {
 
-		SDPState ret = message->process(static_cast<MessageProcessor*>(this), addr64);
-
+		INFO("process msg");
+		SDPState ret = message->process(static_cast<MessageProcessor*>(this), addr64);	
 		delete message;
-
+		INFO("proc&release");
 		return ret;
 	}
-
+	ERROR("Decode fail");
 	return UNKNOWN_MESSAGE;
 
 };
@@ -200,11 +201,12 @@ RegistrationStatus SDP::registerService(ServiceType sid, ActionType actionType,
 	LocalServiceRecord *seat = findEmptyLocalServiceRecord();
 
 	if (seat == NULL) {
-		ERROR("No available seat, failed to register service");
+		ERROR("No seat, failed to register srv");
 		return REGISTRATION_FAILED;
 	}
 
 	seat->sid = sid;
+	seat->aid = actionType;
 	seat->callback = callback;
 
 }
@@ -222,6 +224,10 @@ SDPState SDP::processMessage(XBeeAddress64 &addr64, DA_Message *message) {
 
 	size_t size = 0;
 
+	if (record) {
+		INFO("Rec found");
+	}
+
 	// FOUND?
 	if (record && record->callback) {				
 		// prepare the call
@@ -235,15 +241,21 @@ SDPState SDP::processMessage(XBeeAddress64 &addr64, DA_Message *message) {
 		if (size > 0) {
 			// send the result
 			DAR_Message response = DAR_Message(sid, aid, DONE);
+			response.setActionResultSize(size);
+			response.setActionResult(out);
+
 			uint8_t buffer[size + 5];
 
 			// override size
 			size = response.Encode(buffer, sizeof(buffer));
 
 			if (size > 0) {
+				INFO((int) size);
 				// Transmit
-				transmitPacket(addr64, buffer, size);
-				INFO("All good, action executed and message sent");
+				if (transmitPacket(addr64, buffer, size) == XBEE_SUCCESS)
+					INFO("Action executed, mesg sent");
+				else
+					ERROR("Action executed, mesg failed"); 
 				return DA_RECEIVED;
 			} else {
 				// Failed to build response
@@ -265,8 +277,10 @@ SDPState SDP::processMessage(XBeeAddress64 &addr64, DA_Message *message) {
 
 	if (size > 0) {
 		// Transmit
-		transmitPacket(addr64, buffer, size);
-		INFO("Sent action NOT_FOUND message");
+		if (transmitPacket(addr64, buffer, size) == XBEE_SUCCESS)
+			INFO("Sent action NOT_FOUND message");
+		else 
+			ERROR("Failed to send NOT_FOUND message");
 		return DA_RECEIVED;
 	} else {
 		// Failed to build response
@@ -288,15 +302,18 @@ SDPState SDP::processMessage(XBeeAddress64 &addr64, const FS_Message *message) {
 	if (service) {
 		FSR_Message message = FSR_Message(sid);
 		message.setAddress64(this->getLocal64());
-		message.setAddress16(this->getLocal16());
+		//message.setAddress16(this->getLocal16());
 
-		uint8_t buffer[MESSAGE_BUFFER_SIZE];
+		uint8_t buffer[FSR_MESSAGE_SIZE];
 
 		// override size
 		size_t size = message.Encode(buffer, sizeof(buffer));
 	
 		if (size > 0) {
-			transmitPacket(addr64, buffer, size);
+			if (transmitPacket(addr64, buffer, size) == XBEE_SUCCESS)
+				INFO("FSR sent");
+			else 
+				ERROR("FSR not sent");
 		}
 
 		return FS_RECEIVED;
@@ -324,14 +341,15 @@ SDPState SDP::processMessage(XBeeAddress64 &addr64, const FSR_Message *message) 
 	RemoteServiceRecord *slot = findEmptyRemoteServiceRecord();
 
 	if (slot) {
+		INFO("Updating RSD");
 		slot->sid = message->getServiceType();
 		slot->address64 = message->getAddress64();
-		slot->address16 = message->getAddress16();
+		//slot->address16 = message->getAddress16();
 
 		return FSR_RECEIVED;
 	}
 
-	ERROR("Failed to find an empty slot");
+	ERROR("Failed to find a slot");
 
 	return FSR_RECEIVED;
 };
@@ -342,6 +360,9 @@ SDPState SDP::processMessage(XBeeAddress64 &addr64, const DAR_Message *message) 
 	cout << "dar_message" << std::endl; 
 #endif
 
+	INFO("processMessage DAR");
+
+
 	ServiceType sid = message->getServiceType();
 	ActionType aid = message->getActionType();
 
@@ -351,12 +372,10 @@ SDPState SDP::processMessage(XBeeAddress64 &addr64, const DAR_Message *message) 
 		{
 			ServiceCallbackRecord *scd = findServiceCallback(sid, aid); 
 			if (scd) {
-				INFO("Callback found, calling it...");
+				INFO("Callback found");
 				scd->callback(message->getActionResult(), message->getActionResultSize());
-				return DAR_RECEIVED;
 			} else {
-				ERROR("Invalid callback");
-				return DAR_RECEIVED;
+				ERROR("Callback not found");
 			}
 			break;
 		}
@@ -367,26 +386,24 @@ SDPState SDP::processMessage(XBeeAddress64 &addr64, const DAR_Message *message) 
 			RemoteServiceRecord *remoteService = findRemoteService(sid);
 			remoteService->sid = UNDEF_SERVICE;
 			remoteService->address64 = XBeeAddress64();
-			remoteService->address16 = 0;
-			ERROR("Action not found, cleaning remote entry");
-			return DAR_RECEIVED;
+			//remoteService->address16 = 0;
+			ERROR("Action not found, cleaned remote entry");
 			break;
 		}
 		
 		case NOT_DONE:
 		{
-			ERROR("Action execution failed");
-			return DAR_RECEIVED;
+			ERROR("Action failed");
 			break;
 		}
 		
 		default:
 		{
 			ERROR("Unexpected");
-			return DAR_RECEIVED;
+			break;
 		}
 	};
-
+	INFO("processMessage DAR done");
 	return DAR_RECEIVED;
 };
 
@@ -410,57 +427,66 @@ ActionStatus SDP::doAction(ServiceType sid, ActionType actionType,
 			// store the result somewhere
 			if (callback) {
 				callback(buffer, size);
-				ERROR("Local action DONE");
+				ERROR("LAction DONE");
 				return DONE;
 			} else {
-				ERROR("Invalid callback for local action");
+				ERROR("Invalid callback LAction");
 				return NOT_DONE;
 			}
 		}
 
 		// action failed
-		ERROR("Local action failed");
+		ERROR("LAction failed");
 		return NOT_DONE;		
 	}
+
+	INFO("LAction not found");
 
 	// else try to find the remote service (cached)
 	RemoteServiceRecord *remoteService = findRemoteService(sid);
 
 	// if found try the action
 	if (remoteService) {
-
+		INFO("RAction found");
 		// store the callback
 		ServiceCallbackRecord *scd = findServiceCallback(sid, actionType); 
 		if (!scd) {
 			scd = findEmptyServiceCallbackRecord();	
+
+			if (!scd) {			
+				ERROR("No seat for callback");
+				return NOT_DONE;
+			}	
+
 			scd->sid = sid;
 			scd->aid = actionType;
 			scd->callback = callback;
-		} else {			
-			ERROR("No seat to store the callback");
-			return NOT_DONE;
-		}		
+		} 
 
 		// Send the request
 		DA_Message message = DA_Message(sid, actionType);
 		message.setActionParameterSize(actionParameterSize);
 		message.setActionParameter(actionParameter);
 
-		uint8_t buffer[MESSAGE_BUFFER_SIZE];
+		uint8_t buffer[4 + actionParameterSize];
 
 		size_t size = message.Encode(buffer, sizeof(buffer));	
 
 		XBeeAddress64 addr64 = remoteService->address64;
 
 		// send the request
-		transmitPacket(addr64, buffer, size);
-
-		INFO("Action requested");
+		if (transmitPacket(addr64, buffer, size) == XBEE_SUCCESS) 
+			INFO("Action req'ed");	
+		else 
+			ERROR("Action req. msg failed");	
+		
 		return REQUESTED;
 	}
 
+	INFO("Service not in cache");
+
 	// else request try to find the service
-	uint8_t buffer[MESSAGE_BUFFER_SIZE];
+	uint8_t buffer[FS_MESSAGE_SIZE];
 
 	FS_Message message = FS_Message(sid);
 
@@ -469,9 +495,9 @@ ActionStatus SDP::doAction(ServiceType sid, ActionType actionType,
 	// send the bcast
 	XBeeAddress64 bcast64 = XBeeAddress64(0l, 0xffffl);
 
-	transmitPacket(bcast64, buffer, size);
-
-	INFO("Service requested");
+	if (transmitPacket(bcast64, buffer, size) == XBEE_SUCCESS) 
+		INFO("Service req'ed");
+	
 	return SEARCHING;
 };
 
