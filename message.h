@@ -18,10 +18,10 @@
 	//#include <stdint.h>
 #endif
 
-//#define INFO(x) Serial.println(x)
-#define INFO(x) 
-//#define ERROR(x) Serial.println(x)
-#define ERROR(x) 
+#define INFO(x) Serial.println(x)
+//#define INFO(x) 
+#define ERROR(x) Serial.println(x)
+//#define ERROR(x) 
 
 #ifndef size_t
  #define size_t uint8_t
@@ -80,6 +80,9 @@ public:
     static Message *Decode(const uint8_t *buffer, const size_t size);
 
 	virtual ServiceDiscovery::SDPState process(class MessageProcessor *sdp, XBeeAddress64 &addr64) = 0;
+
+	virtual ~Message() {};
+
 };
 
 /**
@@ -120,7 +123,7 @@ private:
 	ServiceType serviceType;
 
 	XBeeAddress64 address64;
-	XBeeAddress16 address16;
+	//XBeeAddress16 address16;
 
 public:
 	FSR_Message() {
@@ -144,8 +147,8 @@ public:
     inline XBeeAddress64 getAddress64() const { return address64; };
     inline void setAddress64(const XBeeAddress64 addr) { this->address64 = addr; };
 
-    inline XBeeAddress16 getAddress16() const { return address16; };
-    inline void setAddress16(const XBeeAddress16 addr) { this->address16 = addr; };
+    //inline XBeeAddress16 getAddress16() const { return address16; };
+    //inline void setAddress16(const XBeeAddress16 addr) { this->address16 = addr; };
 };
 
 
@@ -165,14 +168,14 @@ public:
 		setServiceType(ServiceDiscovery::UNDEF_SERVICE);	
 		setActionType(ServiceDiscovery::UNDEF_ACTION);
 		setActionParameterSize(0);		
-		setActionParameter(NULL);
+		actionParameter = NULL;
 	};
 
 	DA_Message(ServiceType serviceType, ActionType actionType) {
 		setServiceType(serviceType);	
 		setActionType(actionType);
 		setActionParameterSize(0);		
-		setActionParameter(NULL);
+		actionParameter = NULL;
 	};
 
     virtual size_t Encode(uint8_t *buffer, size_t limit);
@@ -197,7 +200,7 @@ public:
 
 		this->actionParameter = new uint8_t[actionParameterSize];
 		memcpy(this->actionParameter, actionParameter, actionParameterSize);
-		};
+	};
 
     ~DA_Message() { 
     	if (actionParameter != NULL) {
@@ -225,6 +228,7 @@ public:
 		setActionType(ServiceDiscovery::UNDEF_ACTION);
 		setActionStatus(ServiceDiscovery::UNDEF_STATUS);
 		setActionResultSize(0);		
+		actionResult = NULL;
 	};
 
 	DAR_Message(ServiceType serviceType, ActionType actionType, ActionStatus actionStatus) {
@@ -232,6 +236,7 @@ public:
 		setActionType(actionType);
 		setActionStatus(actionStatus);
 		setActionResultSize(0);		
+		actionResult = NULL;
 	};
 	
     virtual size_t Encode(uint8_t *buffer, size_t limit);
@@ -259,7 +264,7 @@ public:
 
 		this->actionResult = new uint8_t[actionResultSize];
 		memcpy(this->actionResult, actionResult, actionResultSize);
-		};
+	};
 
 	~DAR_Message() { 
     	if (actionResult != NULL) {

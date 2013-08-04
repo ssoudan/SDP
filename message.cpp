@@ -93,9 +93,6 @@ DA_Message *DA_Message::Decode(const uint8_t *buffer, const size_t size) {
   	da->setActionParameterSize(psize);
 
 	ASSERT (size >= 4 + psize);
-
- // 	uint8_t* array = new uint8_t[psize];
- // 	memcpy(array, &buffer[4], psize);
 	    
     da->setActionParameter(&buffer[4]);
 
@@ -129,9 +126,6 @@ DAR_Message *DAR_Message::Decode(const uint8_t *buffer, const size_t size) {
   	dar->setActionResultSize(psize);
 
 	ASSERT (size >= 5 + psize);
-
-//  	uint8_t* array = new uint8_t[psize];
-// 	memcpy(array, &buffer[5], psize);
 	    
     dar->setActionResult(&buffer[5]);
 

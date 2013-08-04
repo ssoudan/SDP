@@ -403,7 +403,7 @@ SDPState SDP::processMessage(XBeeAddress64 &addr64, const DAR_Message *message) 
 			break;
 		}
 	};
-	INFO("processMessage DAR done");
+	INFO("processMsg DAR done");
 	return DAR_RECEIVED;
 };
 
