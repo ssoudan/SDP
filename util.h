@@ -9,7 +9,6 @@
 
 #include "sdp-config.h"
 
-
 void convertUint32toArray(const uint32_t value, uint8_t byteArray[]);
 
 void convertUint16toArray(const uint16_t value, uint8_t byteArray[]);

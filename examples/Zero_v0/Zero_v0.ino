@@ -1,3 +1,8 @@
+/*
+ Service Discovery Protocol - Example
+ @author: Sebastien Soudan <sebastien.soudan@gmail.com>
+*/
+
 // Service Discovery lib
 #include <SDP.h>
 

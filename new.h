@@ -3,7 +3,7 @@
  */
 
 #ifndef NEW_H
-#define NEW_H
+ #define NEW_H
 
 #include "sdp-config.h"
 #include <stdlib.h>

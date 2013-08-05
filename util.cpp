@@ -11,12 +11,10 @@ void convertUint32toArray(const uint32_t value, uint8_t byteArray[]) {
  	byteArray[3] = (uint8_t)((value & 0XFF));
 }
 
-
 void convertUint16toArray(const uint16_t value, uint8_t byteArray[]) { 
  	byteArray[0] = (uint8_t)((value >> 8) & 0XFF);
  	byteArray[1] = (uint8_t)((value & 0XFF));
 }
-
 
 uint16_t convertArraytoUint16(const uint8_t byteArray[]) { 
 

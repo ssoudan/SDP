@@ -4,7 +4,7 @@
 */
 
 #ifndef SDP_H_
-#define SDP_H_
+ #define SDP_H_
 
 #include "enum.h"
 

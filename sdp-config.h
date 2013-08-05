@@ -61,6 +61,9 @@
 	#include <cstring>
 	#include <assert.h>
 	#include <iostream>
+	#ifndef size_t
+ 		#define size_t uint8_t
+	#endif
 	using namespace std;
 
 	#define ASSERT(x) assert(x)
