@@ -21,4 +21,4 @@ test: $(OBJS)
 	g++ $(LDFLAGS) -o test $(OBJS) $(LDLIBS) 
 
 clean:
-	rm -f *.o test
+	rm -f tests/*.o *.o test
