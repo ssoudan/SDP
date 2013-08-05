@@ -17,8 +17,17 @@ OBJS=$(subst .cpp,.o,$(SRCS))
 %.o: %.xxx 
 	g++ -x cpp $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
+all: test 
+	./test
+	cd examples ; $(MAKE)
+
 test: $(OBJS)
 	g++ $(LDFLAGS) -o test $(OBJS) $(LDLIBS) 
 
+examples:
+	cd examples ; $(MAKE)
+
+
 clean:
+	cd examples ; $(MAKE) clean
 	rm -f tests/*.o *.o test
