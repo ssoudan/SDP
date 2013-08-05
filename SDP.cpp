@@ -172,6 +172,7 @@ SDPState SDP::transmitPacket(XBeeAddress64 &addr64, uint8_t message[], size_t le
 		return XBEE_ERROR;
 	}
 
+	return XBEE_ERROR;
 };
 
 SDPState SDP::processMessage(XBeeAddress64 &addr64, const uint8_t *buffer, const size_t size) {

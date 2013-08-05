@@ -2,19 +2,23 @@
 # Service Discovery Protocol - Makefile
 # @author: Sebastien Soudan <sebastien.soudan@gmail.com>
 #
-ARDMK_DIR=../../Arduino-Makefile/
-ARDUINO_DIR=/Applications/Arduino-1.0.5.app/Contents/Resources/Java
 
-NO_CORE = Yes
+CPPFLAGS=-I. -g3 -ggdb -DLOCAL 
+#CPPFLAGS=-I. -g3 -ggdb -DARDUINO
+LDFLAGS=-g3 -ggdb
+LDLIBS=
 
-BOARD_TAG = atmega16
-MCU = atmega16
-F_CPU = 8000000L
+SRCS=util.cpp message.cpp SDP.cpp tests/test.cpp
+OBJS=$(subst .cpp,.o,$(SRCS))
 
-ISP_PROG   = stk500v1
-AVRDUDE_ISP_BAUDRATE = 19200
-ISP_PORT = /dev/ttyACM*
+%.o: %.cpp 
+	g++ $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
-include $(ARDMK_DIR)/arduino-mk/Arduino.mk
+%.o: %.xxx 
+	g++ -x cpp $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
-# !!! Important. You have to use make ispload to upload when using ISP programmer
+test: $(OBJS)
+	g++ $(LDFLAGS) -o test $(OBJS) $(LDLIBS) 
+
+clean:
+	rm -f *.o test

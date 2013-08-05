@@ -6,34 +6,14 @@
 #ifndef SDP_H_
 #define SDP_H_
 
-#include <XBee.h>
-//#include "Arduino.h"
 #include "enum.h"
 
-#include "Arduino.h"
+#include "sdp-config.h"
 
 #include "message.h"
 #include "util.h"
 
-#ifndef ARDUINO
-#include <iostream>
 using namespace std;
-#endif
-
-#define RSD_SIZE 10
-#define SCD_SIZE 10
-#define LSD_SIZE 10
-#define ACTION_BUFFER_SIZE 10
-
-/***************************************
-TODO:
- - detect local address
- - test with more than one service
- - test with more than two nodes
- - test robustness
- - introduce timeout in case the service provider died
- - extend the library of service/actions 
-***************************************/
 
 typedef struct {
 	ServiceType sid;
@@ -115,7 +95,7 @@ class SDP : public MessageProcessor {
 		LocalServiceRecord *findEmptyLocalServiceRecord();
 
 		XBeeAddress64 findService64(ServiceType sid); 
-		XBeeAddress16 findService16(ServiceType sid); 
+		//XBeeAddress16 findService16(ServiceType sid); 
 
 		SDPState processMessage(XBeeAddress64 &addr64, const uint8_t *buffer, const size_t size);
 		//SDPState processMessage(const XBeeAddress64 &addr64, const Message *message);		

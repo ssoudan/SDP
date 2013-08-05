@@ -6,6 +6,7 @@
 #ifndef MESSAGE_H_
 #define MESSAGE_H_
 
+#include "sdp-config.h"
 #include "enum.h"
 
 #if defined(ARDUINO)
@@ -13,51 +14,11 @@
   	#include <stdint.h>
  	#include <string.h>
  	#include "new.h"
- 	#define ASSERT(x) {}
- 	//#include <stdlib.h>
-	//#include <stdint.h>
 #endif
-
-#define INFO(x) Serial.println(x)
-//#define INFO(x) 
-//#define ERROR(x) Serial.println(x)
-#define ERROR(x) 
 
 #ifndef size_t
  #define size_t uint8_t
 #endif
-
-typedef uint16_t XBeeAddress16;
-
-#ifndef XBee_h
-
- class XBeeAddress64 {
- private:
- 	uint64_t addr;
- public:
- 	XBeeAddress64() {
- 		addr = 0;
- 	};
-
- 	inline uint32_t getMsb() const {
- 		return (uint32_t) (addr >> 32);
- 	};
-
-	inline uint32_t getLsb() const {
- 		return (uint32_t) (addr & 0xffffffff);
- 	};
-
- 	inline void setMsb(const uint32_t msb) {
- 		addr = (addr & 0xffffffff) + ((uint64_t) msb << 32);
- 	};
-
- 	inline void setLsb(const uint32_t lsb) {
- 		addr = (addr & 0xffffffff00000000ll) + lsb;
- 	};
-
- };
- 
-#endif 
 
 #define FS 	1
 #define FSR 2

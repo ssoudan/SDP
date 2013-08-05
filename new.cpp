@@ -1,34 +1,30 @@
-#include <new.h>
-#include <Arduino.h>
-
-//#define INFO(x) {}
-#define INFO(x, y) do {Serial.print(x); Serial.println(y); } while (0)
+#include "new.h"
 
 void * operator new(size_t size)
 {
-  INFO("new", (int) size);
+  MOREINFO("new", (unsigned int) size);
   void * ret = malloc(size);
-  INFO("ptr", (unsigned int) ret);
+  MOREINFO("ptr", (unsigned int) ret);
   return ret;
 }
 
 void * operator new[](size_t size)
 {
-  INFO("new[]", (int) size);
+  MOREINFO("new[]", (unsigned int) size);
   void * ret = malloc(size);
-  INFO("ptr", (unsigned int) ret);
+  MOREINFO("ptr", (unsigned int) ret);
   return ret;
 }
 
 void operator delete(void * ptr)
 {
-  INFO("del", (unsigned int) ptr);
+  MOREINFO("del", (unsigned int) ptr);
   free(ptr);
 }
 
 void operator delete[](void * ptr)
 {
-  INFO("del[]", (unsigned int) ptr);
+  MOREINFO("del[]", (unsigned int) ptr);
   free(ptr);
 }
 
