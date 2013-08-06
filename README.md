@@ -80,6 +80,7 @@ My tree looks like something like:
 
 * Create your own project Makefile similar to this one:
 
+```
 	#
 	# Service Discovery Protocol - Makefile
 	# @author: Sebastien Soudan <sebastien.soudan@gmail.com>
@@ -103,8 +104,10 @@ My tree looks like something like:
 				   Wire/utility
 
 	include $(ARDMK_DIR)/arduino-mk/Arduino.mk
+```
 
 * Create your own code but here is an example:
+```
 	#include <SDP.h> // Service Discovery lib
 	// Xbee
 	XBee xbee = XBee();
@@ -185,7 +188,7 @@ My tree looks like something like:
 	  // do a lot of other stuff here.
 	  delay(300);
 	}
-
+```
 
 	                    
 
