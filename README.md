@@ -8,9 +8,13 @@
 
 Sebastien Soudan <sebastien.soudan@gmail.com> 2013
 
+APLv2
+
+A Service Discovery Protocol for Arduino-Xbee based sensor networks.
+
 ===============
 Principle
-===============
+===
 
 * One board register an action it can offer on a service
 * Another board want this action to be executed but have 
@@ -40,7 +44,7 @@ Note that there are some 'corner' cases that are not yet supported by this lib:
 
 ===============
 To Do: 
-===============
+===
 * extract XBee from the stuff
 * add timeout mechanism
 * refine service/action model (single callback for an entire service?)
@@ -50,7 +54,7 @@ To Do:
 
 ===============
 Getting started
-===============
+===
 
 * Get Arduino-Makefile [https://github.com/sudar/Arduino-Makefile] from Sudar.
 
@@ -184,3 +188,4 @@ My tree looks like something like:
 
 
 	                    
+

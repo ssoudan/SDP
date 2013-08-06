@@ -34,7 +34,6 @@ using namespace ServiceDiscovery;
 	Generic message class
 */
 class Message {
-//private:
 public:
 	//    virtual void DoSomething();
     virtual size_t Encode(uint8_t *buffer, size_t limit) = 0;

@@ -20,7 +20,7 @@ XBeeAddress64 local64 = XBeeAddress64(0xbadc0de, 0xdeadbeef);
  */
 size_t getDate(uint8_t *in, size_t inLength, uint8_t *out, size_t outLimit) {
  
-    Serial.println("getDate");
+    Serial.println(F("getDate"));
 
     if (outLimit >= 4) {
 
@@ -38,13 +38,13 @@ void setup() {
   // Debugging output
   Serial.begin(9600);
 
-  Serial.println("setup!");
+  Serial.println(F("setup!"));
 
   // Init xbee
   xbee.begin(Serial);
   
   sdp.setLocal64(local64);
-  Serial.println("SDP init");
+  Serial.println(F("SDP init"));
 
   // Service Discovery registration 
   RegistrationStatus res = sdp.registerService(ServiceDiscovery::SDP_RTC, ServiceDiscovery::GET_VALUE, &getDate);

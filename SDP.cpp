@@ -16,6 +16,7 @@ RemoteServiceRecord *SDP::findRemoteService(ServiceType sid) {
 	return NULL;
 }; 
 
+
 ServiceCallbackRecord *SDP::findServiceCallback(ServiceType sid, ActionType aid) {
 	for (int i = 0 ; i < SCD_SIZE ; i++) {		
 		if (scd[i].sid == sid && scd[i].aid == aid )
@@ -24,6 +25,7 @@ ServiceCallbackRecord *SDP::findServiceCallback(ServiceType sid, ActionType aid)
 
 	return NULL;
 }; 
+
 
 LocalServiceRecord *SDP::findLocalService(ServiceType sid, ActionType aid) {
 
@@ -35,6 +37,7 @@ LocalServiceRecord *SDP::findLocalService(ServiceType sid, ActionType aid) {
 	return NULL;
 };
 
+
 LocalServiceRecord *SDP::findLocalService(ServiceType sid) {
 
 	for (int i = 0 ; i < LSD_SIZE ; i++) {		
@@ -44,6 +47,7 @@ LocalServiceRecord *SDP::findLocalService(ServiceType sid) {
 
 	return NULL;
 };
+
 
 LocalServiceRecord *SDP::findEmptyLocalServiceRecord() {
 
@@ -324,13 +328,6 @@ SDPState SDP::processMessage(XBeeAddress64 &addr64, const FS_Message *message) {
 
 	return FS_RECEIVED;
 };
-
-// SDPState SDP::processMessage(const XBeeAddress64 &addr64, const Message *message) { 			
-// #ifndef ARDUINO
-// 	cout << "message" << std::endl; 
-// #endif
-// 	return UNKNOWN_STATE;
-// };
 
 
 SDPState SDP::processMessage(XBeeAddress64 &addr64, const FSR_Message *message) { 
