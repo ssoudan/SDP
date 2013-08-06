@@ -45,12 +45,12 @@ Note that there are some 'corner' cases that are not yet supported by this lib:
 ===============
 To Do: 
 ===
-* extract XBee from the stuff
-* add timeout mechanism
-* refine service/action model (single callback for an entire service?)
-* add location concept to the service
-* improve the way the xmit status is checked
-* use it
+- [ ] extract XBee from the stuff
+- [ ] add timeout mechanism
+- [ ] refine service/action model (single callback for an entire service?)
+- [ ] add location concept to the service
+- [ ] improve the way the xmit status is checked
+- [ ] use it
 
 ===============
 Getting started
