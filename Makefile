@@ -3,9 +3,10 @@
 # @author: Sebastien Soudan <sebastien.soudan@gmail.com>
 #
 
-CPPFLAGS=-I. -g3 -ggdb -DLOCAL 
-#CPPFLAGS=-I. -g3 -ggdb -DARDUINO
-LDFLAGS=-g3 -ggdb
+CPPFLAGS=-I. -ggdb -g3 -DDEBUG -DLOCAL 
+#CPPFLAGS=-I. -g3 -ggdb 
+
+LDFLAGS=
 LDLIBS=
 
 SRCS=util.cpp message.cpp SDP.cpp tests/test.cpp
