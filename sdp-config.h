@@ -39,16 +39,22 @@
 	Debug statement - disable them to save memory (.data).
  */
 #if defined(DEBUG)	
-	#define INFO(x) Serial.println(x)
-	#define MOREINFO(x, y) do {Serial.print(x); Serial.println(y); } while (0)
-	#define ERROR(x) Serial.println(x)
+
+	#if defined(LOCAL)		
+		#define INFO(x) do { cout << x << endl; } while (0)
+		#define MOREINFO(x, y) do { cout << x << y << endl; } while (0)
+		#define ERROR(x) do { cout << x << endl; } while (0)
+	#else 
+		#define INFO(x) Serial.println(F(x)
+		#define MOREINFO(x, y) do {Serial.print(F(x); Serial.println(y); } while (0)
+		#define ERROR(x) Serial.println(F(x))		
+	#endif 
+
 #else
 	#define INFO(x) 
 	#define MOREINFO(x, y) 
 	#define ERROR(x) 
 #endif
-
-
 
 
 /*
@@ -61,11 +67,14 @@
 	#include <cstring>
 	#include <assert.h>
 	#include <iostream>
+
 	#ifndef size_t
  		#define size_t uint8_t
 	#endif
+
 	using namespace std;
 
+	#define F(x) x
 	#define ASSERT(x) assert(x)
 
 	/*
@@ -197,8 +206,8 @@
 		When building for the board, just import XBee.h and ignore the assert
 	 */
 
-	#include "Arduino.h"
-	#include <XBee.h>
+//	#include "Arduino.h"
+//	#include <XBee.h>
 	#define ASSERT(x)
 
 #endif
