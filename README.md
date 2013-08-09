@@ -45,6 +45,7 @@ Note that there are some 'corner' cases that are not yet supported by this lib:
 ===============
 To Do: 
 ===
+- [ ] refactor the *Service into proper OOP code
 - [ ] extract XBee from the stuff
 - [ ] add timeout mechanism
 - [ ] refine service/action model (single callback for an entire service?)
