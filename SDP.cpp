@@ -16,6 +16,16 @@ RemoteServiceRecord *SDP::findRemoteService(ServiceType sid) {
 	return NULL;
 }; 
 
+RemoteServiceRecord *SDP::findRemoteService(ServiceType sid, ServiceLocation sl) {
+
+	for (int i = 0 ; i < RSD_SIZE ; i++) {		
+		if (rsd[i].sid == sid && rsd[i].sl == sl)
+			return &rsd[i];
+	}
+
+	return NULL;
+}; 
+
 
 ServiceCallbackRecord *SDP::findServiceCallback(ServiceType sid, ActionType aid) {
 	for (int i = 0 ; i < SCD_SIZE ; i++) {		
@@ -25,6 +35,37 @@ ServiceCallbackRecord *SDP::findServiceCallback(ServiceType sid, ActionType aid)
 
 	return NULL;
 }; 
+
+ServiceCallbackRecord *SDP::findServiceCallback(ServiceType sid, ServiceLocation sl, ActionType aid) {
+	for (int i = 0 ; i < SCD_SIZE ; i++) {		
+		if (scd[i].sid == sid && scd[i].aid == aid && scd[i].sl == sl)
+			return &scd[i];
+	}
+
+	return NULL;
+}; 
+
+LocalServiceRecord *SDP::findLocalService(ServiceType sid, ServiceLocation sl, ActionType aid) {
+
+	for (int i = 0 ; i < LSD_SIZE ; i++) {		
+		if (lsd[i].sid == sid && lsd[i].aid == aid && lsd[i].sl == sl)
+			return &lsd[i];
+	}
+
+	return NULL;
+};
+
+
+LocalServiceRecord *SDP::findLocalService(ServiceType sid, ServiceLocation sl) {
+
+	for (int i = 0 ; i < LSD_SIZE ; i++) {		
+		if (lsd[i].sid == sid && lsd[i].sl == sl)
+			return &lsd[i];
+	}
+
+	return NULL;
+};
+
 
 
 LocalServiceRecord *SDP::findLocalService(ServiceType sid, ActionType aid) {
@@ -199,6 +240,13 @@ SDPState SDP::processMessage(XBeeAddress64 &addr64, const uint8_t *buffer, const
 RegistrationStatus SDP::registerService(ServiceType sid, ActionType actionType, 
 			uint8_t (*callback)(uint8_t *in, size_t inSize, uint8_t *out, size_t outLimit)) {
 
+	return SDP::registerService(sid, ServiceDiscovery::UNDEF_LOCATION, actionType, callback);
+}
+
+
+RegistrationStatus SDP::registerService(ServiceType sid, ServiceLocation sl, ActionType actionType, 
+			uint8_t (*callback)(uint8_t *in, size_t inSize, uint8_t *out, size_t outLimit)) {
+
 	ASSERT(sid != 0);
 	ASSERT(actionType != 0);
 	ASSERT(callback != NULL);
@@ -211,10 +259,13 @@ RegistrationStatus SDP::registerService(ServiceType sid, ActionType actionType,
 	}
 
 	seat->sid = sid;
+	seat->sl = sl;
 	seat->aid = actionType;
 	seat->callback = callback;
 
+	return REGISTRATION_SUCCESS;
 }
+
 
 
 SDPState SDP::processMessage(XBeeAddress64 &addr64, DA_Message *message) { 
@@ -222,11 +273,12 @@ SDPState SDP::processMessage(XBeeAddress64 &addr64, DA_Message *message) {
 	cout << "da_message" << std::endl; 
 #endif		
 	ServiceType sid = message->getServiceType();
+	ServiceLocation sl = message->getServiceLocation();
 	ActionType aid = message->getActionType();
 
 	// Find the service locally, 
-	LocalServiceRecord* record = SDP::findLocalService(sid, aid); 
-
+	LocalServiceRecord* record = SDP::findLocalService(sid, sl, aid); 
+	DAR_Message response = DAR_Message(sid, aid, NOT_FOUND, sl);
 	size_t size = 0;
 
 	if (record) {
@@ -245,11 +297,11 @@ SDPState SDP::processMessage(XBeeAddress64 &addr64, DA_Message *message) {
 										  ACTION_BUFFER_SIZE);
 		if (size > 0) {
 			// send the result
-			DAR_Message response = DAR_Message(sid, aid, DONE);
+			response.setActionStatus(DONE);
 			response.setActionResultSize(size);
 			response.setActionResult(out);
 
-			uint8_t buffer[size + 5];
+			uint8_t buffer[size + DAR_MESSAGE_BASE_SIZE];
 
 			// override size
 			size = response.Encode(buffer, sizeof(buffer));
@@ -269,13 +321,14 @@ SDPState SDP::processMessage(XBeeAddress64 &addr64, DA_Message *message) {
 			}
 		} 
 		// else send an error
+		response.setActionStatus(NOT_DONE);
 		ERROR("Execution failed");
 	} 
 
 	INFO("Callback not found");
 	// Send ERROR message		
-	DAR_Message response = 	DAR_Message(sid, aid, NOT_FOUND);
-	uint8_t buffer[5];
+	response.setActionStatus(NOT_FOUND);
+	uint8_t buffer[DAR_MESSAGE_BASE_SIZE];
 
 	// override size
 	size = response.Encode(buffer, sizeof(buffer));
@@ -301,13 +354,13 @@ SDPState SDP::processMessage(XBeeAddress64 &addr64, const FS_Message *message) {
 
 	// find the service if available and respond to the requester
 	const ServiceType sid = message->getServiceType();
+	const ServiceLocation sl = message->getServiceLocation();
 
-	LocalServiceRecord *service = findLocalService(sid);
+	LocalServiceRecord *service = findLocalService(sid, sl);
 
 	if (service) {
-		FSR_Message message = FSR_Message(sid);
+		FSR_Message message = FSR_Message(sid, sl);
 		message.setAddress64(this->getLocal64());
-		//message.setAddress16(this->getLocal16());
 
 		uint8_t buffer[FSR_MESSAGE_SIZE];
 
@@ -341,8 +394,8 @@ SDPState SDP::processMessage(XBeeAddress64 &addr64, const FSR_Message *message) 
 	if (slot) {
 		INFO("Updating RSD");
 		slot->sid = message->getServiceType();
+		slot->sl = message->getServiceLocation();
 		slot->address64 = message->getAddress64();
-		//slot->address16 = message->getAddress16();
 
 		return FSR_RECEIVED;
 	}
@@ -362,13 +415,18 @@ SDPState SDP::processMessage(XBeeAddress64 &addr64, const DAR_Message *message) 
 
 
 	ServiceType sid = message->getServiceType();
+	ServiceLocation sl = message->getServiceLocation();
 	ActionType aid = message->getActionType();
+
+	MOREINFO("DAR-type", (uint8_t) sid);
+	MOREINFO("DAR-loc", (uint8_t) sl);
+	MOREINFO("DAR-action", (uint8_t) aid);
 
 	// decode the result
 	switch (message->getActionStatus()) {
 		case DONE:
 		{
-			ServiceCallbackRecord *scd = findServiceCallback(sid, aid); 
+			ServiceCallbackRecord *scd = findServiceCallback(sid, sl, aid); 
 			if (scd) {
 				INFO("Callback found");
 				scd->callback(message->getActionResult(), message->getActionResultSize());
@@ -381,7 +439,7 @@ SDPState SDP::processMessage(XBeeAddress64 &addr64, const DAR_Message *message) 
 		case NOT_FOUND:
 		{
 			// In case of NOT_FOUND, invalidate the service cache for this entry
-			RemoteServiceRecord *remoteService = findRemoteService(sid);
+			RemoteServiceRecord *remoteService = findRemoteService(sid, sl);
 			remoteService->sid = UNDEF_SERVICE;
 			remoteService->address64 = XBeeAddress64();
 			//remoteService->address16 = 0;
@@ -406,13 +464,15 @@ SDPState SDP::processMessage(XBeeAddress64 &addr64, const DAR_Message *message) 
 };
 
 
-ActionStatus SDP::doAction(ServiceType sid, ActionType actionType, 
+ActionStatus SDP::doAction(ServiceType sid, 
+			ServiceLocation sl,
+			ActionType actionType, 			
 			uint8_t actionParameterSize,
 			uint8_t actionParameter[],
 			void (*callback)(uint8_t*, uint8_t)) {
 
 	// Try to find the service locally
-	LocalServiceRecord *localService = findLocalService(sid, actionType);
+	LocalServiceRecord *localService = findLocalService(sid, sl, actionType);
 
 	// if found try the action
 	if (localService) {
@@ -441,13 +501,13 @@ ActionStatus SDP::doAction(ServiceType sid, ActionType actionType,
 	INFO("LAction not found");
 
 	// else try to find the remote service (cached)
-	RemoteServiceRecord *remoteService = findRemoteService(sid);
+	RemoteServiceRecord *remoteService = findRemoteService(sid, sl);
 
 	// if found try the action
 	if (remoteService) {
 		INFO("RAction found");
 		// store the callback
-		ServiceCallbackRecord *scd = findServiceCallback(sid, actionType); 
+		ServiceCallbackRecord *scd = findServiceCallback(sid, sl, actionType); 
 		if (!scd) {
 			scd = findEmptyServiceCallbackRecord();	
 
@@ -457,16 +517,18 @@ ActionStatus SDP::doAction(ServiceType sid, ActionType actionType,
 			}	
 
 			scd->sid = sid;
+			scd->sl = sl;
 			scd->aid = actionType;
 			scd->callback = callback;
 		} 
 
 		// Send the request
 		DA_Message message = DA_Message(sid, actionType);
+		message.setServiceLocation(sl);
 		message.setActionParameterSize(actionParameterSize);
 		message.setActionParameter(actionParameter);
 
-		uint8_t buffer[4 + actionParameterSize];
+		uint8_t buffer[DA_MESSAGE_BASE_SIZE + actionParameterSize];
 
 		size_t size = message.Encode(buffer, sizeof(buffer));	
 
@@ -486,7 +548,7 @@ ActionStatus SDP::doAction(ServiceType sid, ActionType actionType,
 	// else request try to find the service
 	uint8_t buffer[FS_MESSAGE_SIZE];
 
-	FS_Message message = FS_Message(sid);
+	FS_Message message = FS_Message(sid, sl);
 
 	size_t size = message.Encode(buffer, sizeof(buffer));	
 

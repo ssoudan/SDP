@@ -24,6 +24,7 @@ void testFS() {
 	FS_Message fs = FS_Message();
 	
 	fs.setServiceType(ServiceDiscovery::SDP_RTC);
+	fs.setServiceLocation(ServiceDiscovery::CELLAR);
 
 	cout << fs.getServiceType() << std::endl;
 
@@ -48,6 +49,7 @@ void testFS() {
 	}
 
 	assert (v->getServiceType() == ServiceDiscovery::SDP_RTC);
+	assert (v->getServiceLocation() == ServiceDiscovery::CELLAR);
 
 	// Service Discovery Protocol
 	SDP sdp = SDP(&xbee);
@@ -138,6 +140,7 @@ void testDA() {
 	DA_Message da = DA_Message();
 	
 	da.setServiceType(ServiceDiscovery::SDP_RTC);
+	da.setServiceLocation(ServiceDiscovery::ROOM_1);
 	da.setActionType(GET_VALUE);
 	da.setActionParameterSize(3);
 	assert(da.getActionParameterSize() == 3);
@@ -170,6 +173,7 @@ void testDA() {
 	}
 
 	assert (v->getServiceType() == ServiceDiscovery::SDP_RTC);
+	assert (v->getServiceLocation() == ServiceDiscovery::ROOM_1);
 	assert (v->getActionType() == ServiceDiscovery::GET_VALUE);
 	assert (v->getActionParameterSize() == 3);
 	// TODO add comparaison of the parameter
@@ -199,6 +203,7 @@ void testDAR() {
 	DAR_Message dar = DAR_Message();
 	
 	dar.setServiceType(ServiceDiscovery::SDP_RTC);
+	dar.setServiceLocation(ServiceDiscovery::ROOM_1);
 	dar.setActionType(ServiceDiscovery::GET_VALUE);
 	dar.setActionStatus(ServiceDiscovery::DONE);
 	dar.setActionResultSize(3);
@@ -233,6 +238,7 @@ void testDAR() {
 	}
 
 	assert (v->getServiceType() == ServiceDiscovery::SDP_RTC);
+	assert (v->getServiceLocation() == ServiceDiscovery::ROOM_1);
 	assert (v->getActionType() == ServiceDiscovery::GET_VALUE);
 	assert (v->getActionStatus() == ServiceDiscovery::DONE);
 	assert (v->getActionResultSize() == 3);

@@ -35,9 +35,11 @@ FS_Message *FS_Message::Decode(const uint8_t *buffer, const size_t size) {
 	}
 
 	// Skip first byte
+	MOREINFO("FS-type", (uint8_t) buffer[1]);
+	MOREINFO("FS-loc", (uint8_t) buffer[2]);
 
-	ServiceType serviceType = (ServiceType) buffer[1];
-	fs->setServiceType(serviceType);
+	fs->setServiceType((ServiceType) buffer[1]);
+	fs->setServiceLocation((ServiceLocation) buffer[2]);
  
 	return fs;
 };
@@ -58,15 +60,14 @@ FSR_Message *FSR_Message::Decode(const uint8_t *buffer, const size_t size) {
 
 	ServiceType serviceType = (ServiceType) buffer[1];
 	fsr->setServiceType(serviceType);
+
+	ServiceLocation serviceLocation = (ServiceLocation) buffer[1 + 1];
+	fsr->setServiceLocation(serviceLocation);
  
  	XBeeAddress64 addr64 = XBeeAddress64();
- 	addr64.setMsb(convertArraytoUint32(&buffer[1 + 1]));
- 	addr64.setLsb(convertArraytoUint32(&buffer[1 + 1 + 4]));
+ 	addr64.setMsb(convertArraytoUint32(&buffer[1 + 1 + 1]));
+ 	addr64.setLsb(convertArraytoUint32(&buffer[1 + 1 + 1 + 4]));
     fsr->setAddress64(addr64);
-
-    //XBeeAddress16 addr16 = convertArraytoUint16(&buffer[1 + 1 + 4 + 4]);
-    
-    //fsr->setAddress16(addr16);
 
 	return fsr;
 };
@@ -74,7 +75,7 @@ FSR_Message *FSR_Message::Decode(const uint8_t *buffer, const size_t size) {
 DA_Message *DA_Message::Decode(const uint8_t *buffer, const size_t size) {
 	ASSERT (buffer != NULL);
 
-	ASSERT (size >= 4);
+	ASSERT (size >= 5);
 
 	DA_Message *da = new DA_Message();
 
@@ -85,16 +86,16 @@ DA_Message *DA_Message::Decode(const uint8_t *buffer, const size_t size) {
 
 	// Skip first byte
 
-	ServiceType serviceType = (ServiceType) buffer[1];
-	da->setServiceType((ServiceType) serviceType);
-  	da->setActionType((ActionType) buffer[2]);
+	da->setServiceType((ServiceType) buffer[1]);
+	da->setServiceLocation((ServiceLocation) buffer[2]);
+  	da->setActionType((ActionType) buffer[3]);
 
-  	const uint8_t psize = buffer[3];
+  	const uint8_t psize = buffer[4];
   	da->setActionParameterSize(psize);
 
-	ASSERT (size >= 4 + psize);
+	ASSERT (size >= 5 + psize);
 	    
-    da->setActionParameter(&buffer[4]);
+    da->setActionParameter(&buffer[5]);
 
 	return da;
 };
@@ -104,9 +105,9 @@ DAR_Message *DAR_Message::Decode(const uint8_t *buffer, const size_t size) {
 	INFO("DARdec");
 	ASSERT (buffer != NULL);
 
-	ASSERT (size >= 5);
+	ASSERT (size >= 6);
 
-  	const uint8_t psize = buffer[4];
+  	const uint8_t psize = buffer[5];
 
 	INFO("psi");
 	INFO((int) psize);
@@ -121,13 +122,14 @@ DAR_Message *DAR_Message::Decode(const uint8_t *buffer, const size_t size) {
 	// Skip first byte
 	
 	dar->setServiceType((ServiceType) buffer[1]);
-  	dar->setActionType((ActionType) buffer[2]);
-	dar->setActionStatus((ActionStatus) buffer[3]);
+	dar->setServiceLocation((ServiceLocation) buffer[2]);
+  	dar->setActionType((ActionType) buffer[3]);
+	dar->setActionStatus((ActionStatus) buffer[4]);
   	dar->setActionResultSize(psize);
 
-	ASSERT (size >= 5 + psize);
+	ASSERT (size >= 6 + psize);
 	    
-    dar->setActionResult(&buffer[5]);
+    dar->setActionResult(&buffer[6]);
 
 	return dar;
 };
@@ -163,10 +165,12 @@ size_t FS_Message::Encode(uint8_t *buffer, size_t limit) {
 	
 	// Message type: 8 bits
 	// Service Type: 8 bits
+	// Service Location: 8 bits
 
 	buffer[0] = FS;
 
 	buffer[1] = FS_Message::getServiceType();
+	buffer[2] = FS_Message::getServiceLocation();
 
 	return FS_MESSAGE_SIZE;
 };
@@ -182,22 +186,21 @@ size_t FSR_Message::Encode(uint8_t *buffer, size_t limit) {
 	
 	// Message type: 8 bits
 	// Service Type: 8 bits
+	// Service Location: 8 bits
 	// addr64: 64 bits
 	//  - MSB (32 bit)
 	//  - LSB (32 bit)
-	// <strike>addr16: 16 bits</strike>
 
 	buffer[0] = FSR;
 	
 	buffer[1] = FSR_Message::getServiceType();
 
+	buffer[1 + 1] = FSR_Message::getServiceLocation();
+
 	XBeeAddress64 addr64 = FSR_Message::getAddress64();
 
-	convertUint32toArray(addr64.getMsb(), &buffer[1 + 1]);
-	convertUint32toArray(addr64.getLsb(), &buffer[1 + 1 + 4]);
-
-	//XBeeAddress16 addr16 = FSR_Message::getAddress16();
-	//convertUint16toArray(addr16, &buffer[1 + 1 + 4 + 4]);
+	convertUint32toArray(addr64.getMsb(), &buffer[1 + 1 + 1]);
+	convertUint32toArray(addr64.getLsb(), &buffer[1 + 1 + 1 + 4]);
 
 	return FSR_MESSAGE_SIZE;
 };
@@ -208,7 +211,7 @@ size_t DA_Message::Encode(uint8_t *buffer, size_t limit) {
 
 	uint8_t size = DA_Message::getActionParameterSize();
 
-	if (limit < 4 + size) {
+	if (limit < DA_MESSAGE_BASE_SIZE + size) {
 		// Buffer too small;
 		ERROR("Buffer too small.");	
 		return 0;
@@ -224,16 +227,18 @@ size_t DA_Message::Encode(uint8_t *buffer, size_t limit) {
 
 	buffer[1] = DA_Message::getServiceType();
 
-	buffer[2] = DA_Message::getActionType();
+	buffer[2] = DA_Message::getServiceLocation();
 
-	buffer[3] = size;
+	buffer[3] = DA_Message::getActionType();
+
+	buffer[4] = size;
 
 	uint8_t *actionParameter = DA_Message::getActionParameter();
 	for (int i = 0 ; i < size ; i++) {
-		buffer[4 + i] = actionParameter[i];
+		buffer[DA_MESSAGE_BASE_SIZE + i] = actionParameter[i];
 	}
 
-	return 4 + size;
+	return DA_MESSAGE_BASE_SIZE + size;
 };
 
 size_t DAR_Message::Encode(uint8_t *buffer, size_t limit) {
@@ -242,7 +247,7 @@ size_t DAR_Message::Encode(uint8_t *buffer, size_t limit) {
 
 	uint8_t size = DAR_Message::getActionResultSize();
 
-	if (limit < 5 + size) {
+	if (limit < DAR_MESSAGE_BASE_SIZE + size) {
 		// Buffer too small;
 		ERROR("Buffer too small.");	
 		return 0;
@@ -250,6 +255,7 @@ size_t DAR_Message::Encode(uint8_t *buffer, size_t limit) {
 	
 	// Message type: 8 bits
 	// Service Type: 8 bits
+	// Service Location: 8 bits
 	// Action Type: 8 bits
 	// Action Status: 8 bits
 	// Result Size: 8 bits
@@ -259,17 +265,19 @@ size_t DAR_Message::Encode(uint8_t *buffer, size_t limit) {
 
 	buffer[1] = DAR_Message::getServiceType();
 
-	buffer[2] = DAR_Message::getActionType();
+	buffer[2] = DAR_Message::getServiceLocation();
 
-	buffer[3] = DAR_Message::getActionStatus();
+	buffer[3] = DAR_Message::getActionType();
+
+	buffer[4] = DAR_Message::getActionStatus();
 	
-	buffer[4] = size;
+	buffer[5] = size;
 
 	uint8_t *actionResult = DAR_Message::getActionResult();
 	for (int i = 0 ; i < size ; i++) {
-		buffer[5 + i] = actionResult[i];
+		buffer[DAR_MESSAGE_BASE_SIZE + i] = actionResult[i];
 	}
 
-	return 5 + size;
+	return DAR_MESSAGE_BASE_SIZE + size;
 
 };

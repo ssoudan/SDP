@@ -27,15 +27,16 @@
 
 using namespace ServiceDiscovery;
 
-#define FS_MESSAGE_SIZE 2
-#define FSR_MESSAGE_SIZE (1 + 1 + 4 + 4 /*+ 2*/)
+#define FS_MESSAGE_SIZE 3
+#define FSR_MESSAGE_SIZE (1 + 1 + 1 + 4 + 4 /*+ 2*/)
+#define DA_MESSAGE_BASE_SIZE 5
+#define DAR_MESSAGE_BASE_SIZE 6
 
 /**
 	Generic message class
 */
 class Message {
 public:
-	//    virtual void DoSomething();
     virtual size_t Encode(uint8_t *buffer, size_t limit) = 0;
     static Message *Decode(const uint8_t *buffer, const size_t size);
 
@@ -50,17 +51,24 @@ public:
 */
 class FS_Message : public Message {
 private:
-	ServiceType serviceType;
+	ServiceType serviceType;	
+	ServiceLocation serviceLocation;
 
 public:
-	//    virtual void DoSomething();
-	
+
 	FS_Message() {
 		setServiceType(ServiceDiscovery::UNDEF_SERVICE);
+		setServiceLocation(ServiceDiscovery::UNDEF_LOCATION);
 	};
 
 	FS_Message(ServiceType sid) {
 		setServiceType(sid);
+		setServiceLocation(ServiceDiscovery::UNDEF_LOCATION);
+	};
+
+	FS_Message(ServiceType sid, ServiceLocation sl) {
+		setServiceType(sid);
+		setServiceLocation(sl);
 	};
 
 
@@ -72,6 +80,8 @@ public:
 
     inline ServiceType getServiceType() const {return serviceType; };
     inline void setServiceType(const ServiceType serviceType) { this->serviceType = serviceType; };
+    inline ServiceLocation getServiceLocation() const {return serviceLocation; };
+    inline void setServiceLocation(const ServiceLocation serviceLocation) { this->serviceLocation = serviceLocation; };
 };
 
 
@@ -81,20 +91,25 @@ public:
 class FSR_Message : public Message {
 private:
 	ServiceType serviceType;
+	ServiceLocation serviceLocation;
 
 	XBeeAddress64 address64;
-	//XBeeAddress16 address16;
 
 public:
 	FSR_Message() {
 		setServiceType(ServiceDiscovery::UNDEF_SERVICE);		
+		setServiceLocation(ServiceDiscovery::UNDEF_LOCATION);
 	};
 
 	FSR_Message(ServiceType serviceType) {
 		setServiceType(serviceType);		
+		setServiceLocation(ServiceDiscovery::UNDEF_LOCATION);
 	};
 
-	//	virtual void DoSomething();
+	FSR_Message(ServiceType serviceType, ServiceLocation sl) {
+		setServiceType(serviceType);		
+		setServiceLocation(sl);
+	};
 
     virtual size_t Encode(uint8_t *buffer, size_t limit);
     static FSR_Message *Decode(const uint8_t *buffer, const size_t size);
@@ -104,11 +119,11 @@ public:
     inline ServiceType getServiceType() const { return serviceType; };
     inline void setServiceType(const ServiceType serviceType) { this->serviceType = serviceType; } ;
 
+    inline ServiceLocation getServiceLocation() const { return serviceLocation; };
+    inline void setServiceLocation(const ServiceLocation serviceLocation) { this->serviceLocation = serviceLocation; } ;
+
     inline XBeeAddress64 getAddress64() const { return address64; };
     inline void setAddress64(const XBeeAddress64 addr) { this->address64 = addr; };
-
-    //inline XBeeAddress16 getAddress16() const { return address16; };
-    //inline void setAddress16(const XBeeAddress16 addr) { this->address16 = addr; };
 };
 
 
@@ -118,6 +133,7 @@ public:
 class DA_Message : public Message {
 private:
 	ServiceType serviceType;
+	ServiceLocation serviceLocation;
 	ActionType actionType;
 	uint8_t actionParameterSize;
 	uint8_t* actionParameter;
@@ -126,6 +142,7 @@ public:
 	//    virtual void DoSomething();
 	DA_Message() {
 		setServiceType(ServiceDiscovery::UNDEF_SERVICE);	
+		setServiceLocation(ServiceDiscovery::UNDEF_LOCATION);	
 		setActionType(ServiceDiscovery::UNDEF_ACTION);
 		setActionParameterSize(0);		
 		actionParameter = NULL;
@@ -133,10 +150,20 @@ public:
 
 	DA_Message(ServiceType serviceType, ActionType actionType) {
 		setServiceType(serviceType);	
+		setServiceLocation(ServiceDiscovery::UNDEF_LOCATION);	
 		setActionType(actionType);
 		setActionParameterSize(0);		
 		actionParameter = NULL;
 	};
+
+	DA_Message(ServiceType serviceType, ActionType actionType, ServiceLocation sl) {
+		setServiceType(serviceType);	
+		setServiceLocation(sl);	
+		setActionType(actionType);
+		setActionParameterSize(0);		
+		actionParameter = NULL;
+	};
+
 
     virtual size_t Encode(uint8_t *buffer, size_t limit);
     static DA_Message *Decode(const uint8_t *buffer, const size_t size);
@@ -145,6 +172,9 @@ public:
 
     inline ServiceType getServiceType() const { return serviceType; };
     inline void setServiceType(const ServiceType serviceType) { this->serviceType = serviceType; };
+
+    inline ServiceLocation getServiceLocation() const { return serviceLocation; };
+    inline void setServiceLocation(const ServiceLocation serviceLocation) { this->serviceLocation = serviceLocation; };
 
 	inline ActionType getActionType() const { return actionType; };
     inline void setActionType(const ActionType actionType) { this->actionType = actionType; };
@@ -176,15 +206,16 @@ public:
 class DAR_Message : public Message {
 private:
 	ServiceType serviceType;
+	ServiceLocation serviceLocation;
 	ActionType actionType;
 	ActionStatus actionStatus;
 	uint8_t actionResultSize;
 	uint8_t* actionResult;
 
 public:
-	//    virtual void DoSomething();
 	DAR_Message() {
 		setServiceType(ServiceDiscovery::UNDEF_SERVICE);	
+		setServiceLocation(ServiceDiscovery::UNDEF_LOCATION);	
 		setActionType(ServiceDiscovery::UNDEF_ACTION);
 		setActionStatus(ServiceDiscovery::UNDEF_STATUS);
 		setActionResultSize(0);		
@@ -193,6 +224,16 @@ public:
 
 	DAR_Message(ServiceType serviceType, ActionType actionType, ActionStatus actionStatus) {
 		setServiceType(serviceType);	
+		setServiceLocation(ServiceDiscovery::UNDEF_LOCATION);	
+		setActionType(actionType);
+		setActionStatus(actionStatus);
+		setActionResultSize(0);		
+		actionResult = NULL;
+	};
+
+	DAR_Message(ServiceType serviceType, ActionType actionType, ActionStatus actionStatus, ServiceLocation sl) {
+		setServiceType(serviceType);	
+		setServiceLocation(sl);	
 		setActionType(actionType);
 		setActionStatus(actionStatus);
 		setActionResultSize(0);		
@@ -206,6 +247,9 @@ public:
 
     inline ServiceType getServiceType() const { return serviceType; };
     inline void setServiceType(const ServiceType serviceType) { this->serviceType = serviceType; };
+
+    inline ServiceLocation getServiceLocation() const { return serviceLocation; };
+    inline void setServiceLocation(const ServiceLocation serviceLocation) { this->serviceLocation = serviceLocation; };
 
 	inline ActionType getActionType() const { return actionType; };
     inline void setActionType(const ActionType actionType) { this->actionType = actionType; };

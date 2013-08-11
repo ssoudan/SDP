@@ -73,7 +73,7 @@ void actionCallback(uint8_t *data, size_t size) {
 void loop() {
   processMessage();
 
-  ActionStatus as = sdp.doAction(ServiceDiscovery::TEMPERATURE, ServiceDiscovery::GET_VALUE, 0, NULL, &actionCallback);
+  /* ActionStatus as = */ sdp.doAction(ServiceDiscovery::TEMPERATURE, ServiceDiscovery::CELLAR, ServiceDiscovery::GET_VALUE, 0, NULL, &actionCallback);
   // flash some led according to the status in 'as'?
 
   // do a lot of other stuff here.
