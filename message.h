@@ -14,10 +14,10 @@
   	#include <stdint.h>
  	#include <string.h>
  	#include "new.h"
-#endif
-
 #ifndef size_t
  #define size_t uint8_t
+#endif
+
 #endif
 
 #define FS 	1
@@ -28,7 +28,7 @@
 using namespace ServiceDiscovery;
 
 #define FS_MESSAGE_SIZE 3
-#define FSR_MESSAGE_SIZE (1 + 1 + 1 + 4 + 4 /*+ 2*/)
+#define FSR_MESSAGE_SIZE (1 + 1 + 1 + 4 + 4)
 #define DA_MESSAGE_BASE_SIZE 5
 #define DAR_MESSAGE_BASE_SIZE 6
 

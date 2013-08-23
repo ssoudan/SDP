@@ -131,8 +131,12 @@ SDPState SDP::readPackets() {
     
     if (xbee->getResponse().isAvailable()) {
       // got something
-      
+      	INFO("readPackets: isAvailable()");
+
+
       if (xbee->getResponse().getApiId() == ZB_RX_RESPONSE) {
+      	INFO("ZB_RX_STATUS_RESPONSE");
+
         // got a zb rx packet
         
         // now fill our zb rx class
@@ -151,8 +155,12 @@ SDPState SDP::readPackets() {
         INFO((int) rx.getDataLength());
         INFO("bytes");
         return processMessage(rx.getRemoteAddress64(), rx.getData(), rx.getDataLength());
-
+	  } else if (xbee->getResponse().getApiId() == ZB_TX_STATUS_RESPONSE) {
+	  	INFO("ZB_TX_STATUS_RESPONSE");
+        return XBEE_UNEXPECTED_MSG;
       } else if (xbee->getResponse().getApiId() == MODEM_STATUS_RESPONSE) {
+	  	INFO("MODEM_STATUS_RESPONSE");
+
   		ModemStatusResponse msr = ModemStatusResponse();
 
         xbee->getResponse().getModemStatusResponse(msr);
@@ -190,31 +198,39 @@ SDPState SDP::transmitPacket(XBeeAddress64 &addr64, uint8_t message[], size_t le
 
 	xbee->send(zbTx);
 
+	INFO("Packet supposedly sent");
 	// after sending a tx request, we expect a status response
 	// wait up to half second for the status response
-	if (xbee->readPacket(500)) {
+	if (xbee->readPacket(1000)) {
 		// got a response!
+		INFO("Got a tx status report?");
 
 		// should be a znet tx status             
 		if (xbee->getResponse().getApiId() == ZB_TX_STATUS_RESPONSE) {
 			xbee->getResponse().getZBTxStatusResponse(txStatus);
 
+			INFO("ZB_TX_STATUS_RESPONSE");
+
 			// get the delivery status, the fifth byte
 			if (txStatus.getDeliveryStatus() == SUCCESS) {
+				INFO("XBEE_SUCCESS");
 				// success.  time to celebrate
 				return XBEE_SUCCESS;
 			} else {
+				INFO("XBEE_NOT_DELIVERED");
 				// the remote XBee did not receive our packet. is it powered on?
 				return XBEE_NOT_DELIVERED;
-			}
+			}	
+		} else if (xbee->getResponse().isError()) {
+			//nss.print("Error reading packet.  Error code: ");  
+			//nss.println(xbee->getResponse().getErrorCode());
+			MOREINFO("XBEE_ERROR", xbee->getResponse().getErrorCode());
+			return XBEE_ERROR;
+		} else {
+			// local XBee did not provide a timely TX Status Response -- should not happen
+			INFO("XBEE_ERROR");
+			return XBEE_ERROR;
 		}
-	} else if (xbee->getResponse().isError()) {
-		//nss.print("Error reading packet.  Error code: ");  
-		//nss.println(xbee->getResponse().getErrorCode());
-		return XBEE_ERROR;
-	} else {
-		// local XBee did not provide a timely TX Status Response -- should not happen
-		return XBEE_ERROR;
 	}
 
 	return XBEE_ERROR;
@@ -269,8 +285,8 @@ RegistrationStatus SDP::registerService(ServiceType sid, ServiceLocation sl, Act
 
 
 SDPState SDP::processMessage(XBeeAddress64 &addr64, DA_Message *message) { 
-#ifndef ARDUINO
-	cout << "da_message" << std::endl; 
+#if !defined(ARDUINO) && defined(DEBUG)
+	cerr << "da_message" << std::endl; 
 #endif		
 	ServiceType sid = message->getServiceType();
 	ServiceLocation sl = message->getServiceLocation();
@@ -348,8 +364,8 @@ SDPState SDP::processMessage(XBeeAddress64 &addr64, DA_Message *message) {
 };
 
 SDPState SDP::processMessage(XBeeAddress64 &addr64, const FS_Message *message) { 
-#ifndef ARDUINO			
-	cout << "fs_message" << std::endl; 
+#if !defined(ARDUINO) && defined(DEBUG)
+	cerr << "fs_message" << std::endl; 
 #endif
 
 	// find the service if available and respond to the requester
@@ -384,8 +400,8 @@ SDPState SDP::processMessage(XBeeAddress64 &addr64, const FS_Message *message) {
 
 
 SDPState SDP::processMessage(XBeeAddress64 &addr64, const FSR_Message *message) { 
-#ifndef ARDUINO
-	cout << "fsr_message" << std::endl; 
+#if !defined(ARDUINO) && defined(DEBUG)
+	cerr << "fsr_message" << std::endl; 
 #endif
 
 	// Update records with the service
@@ -407,8 +423,8 @@ SDPState SDP::processMessage(XBeeAddress64 &addr64, const FSR_Message *message) 
 
 
 SDPState SDP::processMessage(XBeeAddress64 &addr64, const DAR_Message *message) { 
-#ifndef ARDUINO
-	cout << "dar_message" << std::endl; 
+#if !defined(ARDUINO) && defined(DEBUG)
+	cerr << "dar_message" << std::endl; 
 #endif
 
 	INFO("processMessage DAR");

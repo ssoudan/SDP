@@ -8,8 +8,20 @@
 #include <iostream>
 #include <stdlib.h>
 #include <assert.h>
+#include "stream.h"
 using namespace std;
 
+
+class FakeStream : public Stream {
+	public:	
+	FakeStream() {};
+
+	inline uint8_t read() { cout << "[Stream] read()" << endl; return 42; };
+	inline bool available() { cout << "[Stream] available()" << endl;  return false; };
+	inline void flush() { cout << "[Stream] flushed" << endl; };
+	inline void write(uint8_t val) { cout << "[Stream] "<< (unsigned int) val << " written " << endl; };
+	
+};
 
 /**
 	Test FS Encoding/Decoding
@@ -18,7 +30,9 @@ void testFS() {
 
 	cout << "[..] Tests of decode/encode of FS" << std::endl;
 
-	XBee xbee = XBee();
+	FakeStream stream = FakeStream();
+
+	XBee xbee = XBee(stream);
 
 	// Create a new message
 	FS_Message fs = FS_Message();
@@ -71,7 +85,9 @@ void testFSR() {
 
 	cout << "[..] Tests of decode/encode of FSR" << std::endl;
 
-	XBee xbee = XBee();
+	FakeStream stream = FakeStream();
+
+	XBee xbee = XBee(stream);
 
 	// Create a new message
 	FSR_Message fsr = FSR_Message();
@@ -134,7 +150,9 @@ void testDA() {
 
 	cout << "[..] Tests of decode/encode of DA" << std::endl;
 
-	XBee xbee = XBee();
+	FakeStream stream = FakeStream();
+
+	XBee xbee = XBee(stream);
 
 	// Create a new message
 	DA_Message da = DA_Message();
@@ -197,7 +215,9 @@ void testDAR() {
 
 	cout << "[..] Tests of decode/encode of DAR" << std::endl;
 
-	XBee xbee = XBee();
+	FakeStream stream = FakeStream();
+
+	XBee xbee = XBee(stream);
 
 	// Create a new message
 	DAR_Message dar = DAR_Message();

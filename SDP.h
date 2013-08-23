@@ -43,15 +43,12 @@ class SDP : public MessageProcessor {
 	ServiceCallbackRecord scd[SCD_SIZE];
 	LocalServiceRecord lsd[LSD_SIZE];
 	XBeeAddress64 local64;
-	// XBeeAddress16 local16;
 	XBee *xbee;
 
 	public: 
-		SDP(XBee *xbee) {
-			this->xbee = xbee;
-	
+		SDP() {
 			for (int i = 0 ; i < RSD_SIZE ; i++) {
-				RemoteServiceRecord record = { UNDEF_SERVICE, UNDEF_LOCATION, XBeeAddress64() /*, 0*/};
+				RemoteServiceRecord record = { UNDEF_SERVICE, UNDEF_LOCATION, XBeeAddress64()};
 				rsd[i] = record;
 			}
 
@@ -64,6 +61,10 @@ class SDP : public MessageProcessor {
 				LocalServiceRecord record = { UNDEF_SERVICE, UNDEF_LOCATION, UNDEF_ACTION, 0};
 				lsd[i] = record;
 			}
+		};
+		SDP(XBee *xbee) {
+			SDP();
+			this->xbee = xbee;
 		};
 
 		ActionStatus doAction(ServiceType sid, ServiceLocation sl, ActionType actionType, 
@@ -81,6 +82,8 @@ class SDP : public MessageProcessor {
 
 		inline XBeeAddress64 getLocal64() const { return local64; };
 		inline void setLocal64(const XBeeAddress64 local64) { this->local64 = local64; };
+		inline XBee* getXBee() { return xbee; };
+		inline void setXBee(XBee *xbee) { this->xbee = xbee; };
 
 		virtual SDPState processMessage(XBeeAddress64 &addr64, const FSR_Message *message);
 		virtual SDPState processMessage(XBeeAddress64 &addr64, const FS_Message *message);
@@ -104,7 +107,6 @@ class SDP : public MessageProcessor {
 		LocalServiceRecord *findEmptyLocalServiceRecord();
 
 		XBeeAddress64 findService64(ServiceType sid); 
-		//XBeeAddress16 findService16(ServiceType sid); 
 
 		SDPState processMessage(XBeeAddress64 &addr64, const uint8_t *buffer, const size_t size);
 		//SDPState processMessage(const XBeeAddress64 &addr64, const Message *message);		

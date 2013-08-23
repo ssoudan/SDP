@@ -1,0 +1,303 @@
+/*
+ Service Discovery Protocol - data collector
+ @author: Sebastien Soudan <sebastien.soudan@gmail.com>
+*/
+
+#include "message.h"
+#include "SDP.h"
+
+#include <iostream>
+#include <stdlib.h>
+#include <assert.h>
+#include <boost/assign/list_of.hpp>
+#include "stream.h"
+using namespace std;
+
+#include "Serial.h"
+
+#define LOCAL_ADDR64_HIGH 0x0013a200
+#define LOCAL_ADDR64_LOW  0x408bad4d
+  
+
+class Record {
+public:
+	uint32_t date;
+	float cellar_Temperature;
+	float cellar_Humidity;
+	float terrace_Temperature;
+	bool cellar_FanState;		
+	float room_1_Temperature;
+	float room_1_Pressure;
+	float kitchen_Temperature;
+	float kitchen_Light;
+
+private:
+	friend std::ostream& operator<<(std::ostream&, const Record&);
+	
+};
+
+	const string currentDateTime(time_t date) {
+	    time_t     now = date;
+	    struct tm  tstruct;
+	    char       buf[80];
+	    tstruct = *localtime(&now);
+	    strftime(buf, sizeof(buf), "%Y%m%d%H%M", &tstruct);
+
+	    return buf;
+	};
+
+std::ostream& operator<<(std::ostream &strm, const Record &a) {
+  return strm 	<< currentDateTime(a.date) << "\t"
+				<< a.cellar_Temperature << "\t"
+				<< a.cellar_Humidity << "\t"
+				<< a.terrace_Temperature << "\t"
+				<< a.cellar_FanState << "\t"
+				<< a.room_1_Temperature << "\t"
+				<< a.room_1_Pressure << "\t"
+                                << a.kitchen_Temperature << "\t"
+				<< a.kitchen_Light << endl;
+}
+
+Record record;
+
+
+class ClientSDP : public SDP {
+private:
+
+	static std::map<std::string, ServiceDiscovery::ServiceLocation> serviceLocationString2EnumMap;
+	static std::map<ServiceDiscovery::ServiceLocation, std::string> serviceLocationEnum2StringMap;
+
+	static std::map<std::string, ServiceDiscovery::ServiceType> serviceTypeString2EnumMap;
+	static std::map<ServiceDiscovery::ServiceType, std::string> serviceTypeEnum2StringMap;
+
+	static std::map<std::string, ServiceDiscovery::ActionType> actionTypeString2EnumMap;
+	static std::map<ServiceDiscovery::ActionType, std::string> actionTypeEnum2StringMap;
+
+
+	boost::asio::io_service io;
+	boost::asio::serial_port port;
+	Serial serial;
+public:
+
+	ClientSDP(string device, XBeeAddress64 local64) : io(), port(io, device), serial(&port, 1500) {	
+
+		port.set_option(boost::asio::serial_port_base::baud_rate(9600));
+
+		setXBee(new XBee(serial));
+		setLocal64(local64);
+
+	};
+
+	/**
+		Test DoAction Encoding/Decoding
+	*/
+	void doAction(string service, string location, string action,  void (*method)(uint8_t *buffer, uint8_t size)) {
+
+#if defined(DEBUG)
+		cerr << "[..] doAction(" << service << ", " << location << ", " << action << ")" << std::endl;
+#endif
+
+		ActionStatus as = UNDEF_STATUS;
+		SDPState state = UNKNOWN_STATE;
+
+		int counter = 20;
+		while (counter-- > 0) {
+			as = SDP::doAction(serviceTypeString2EnumMap[service], serviceLocationString2EnumMap[location], actionTypeString2EnumMap[action], 0, NULL, method);
+
+#if defined(DEBUG)
+			if (as == REQUESTED)
+				cerr << "Action " << action << " requested" << endl;
+#endif
+			state = readPackets();
+
+			if (state == DAR_RECEIVED) {
+#if defined(DEBUG)
+				cerr << "state:  DAR_RECEIVED" << endl;
+#endif
+				return;
+			} 
+#if defined(DEBUG)
+			else 
+				cerr << "state: " << (unsigned int) state << endl;			
+#endif
+		}
+
+	}
+
+};
+
+
+std::map<std::string, ServiceDiscovery::ServiceLocation> ClientSDP::serviceLocationString2EnumMap = boost::assign::map_list_of("UNDEF_LOCATION", UNDEF_LOCATION)("TERRACE", TERRACE)("CELLAR", CELLAR)("ROOM_1", ROOM_1)("KITCHEN", KITCHEN);
+std::map<ServiceDiscovery::ServiceLocation, std::string> ClientSDP::serviceLocationEnum2StringMap = boost::assign::map_list_of(UNDEF_LOCATION, "UNDEF_LOCATION")(TERRACE, "TERRACE")(CELLAR, "CELLAR")(ROOM_1, "ROOM_1")(KITCHEN, "KITCHEN");
+
+std::map<std::string, ServiceDiscovery::ServiceType> ClientSDP::serviceTypeString2EnumMap = boost::assign::map_list_of("UNDEF_SERVICE", UNDEF_SERVICE)("SDP_RTC", SDP_RTC)("TEMPERATURE",TEMPERATURE)("PRESSURE", PRESSURE)("FAN", FAN)("HUMIDITY", HUMIDITY)("LIGHT", LIGHT);
+std::map<ServiceDiscovery::ServiceType, std::string> ClientSDP::serviceTypeEnum2StringMap = boost::assign::map_list_of(UNDEF_SERVICE, "UNDEF_SERVICE")(SDP_RTC, "SDP_RTC")(TEMPERATURE,"TEMPERATURE")(PRESSURE, "PRESSURE")(FAN, "FAN")(HUMIDITY, "HUMIDITY")(LIGHT, "LIGHT");
+
+ std::map<std::string, ServiceDiscovery::ActionType> ClientSDP::actionTypeString2EnumMap = boost::assign::map_list_of("UNDEF_ACTION", UNDEF_ACTION) ("GET_VALUE", GET_VALUE) ("SET_VALUE", SET_VALUE)  ("GET_STATE", GET_STATE) ("START", START) ("STOP", STOP) ("AUTO", AUTO);
+ std::map<ServiceDiscovery::ActionType, std::string> ClientSDP::actionTypeEnum2StringMap = boost::assign::map_list_of(UNDEF_ACTION, "UNDEF_ACTION") (GET_VALUE, "GET_VALUE") (SET_VALUE, "SET_VALUE")  (GET_STATE, "GET_STATE") (START, "START") (STOP, "STOP") (AUTO, "AUTO");
+
+void humidity_callback(uint8_t *buffer, uint8_t size) {
+	float humidity;
+
+	memcpy(&humidity, buffer, 4); 
+
+	record.cellar_Humidity = humidity;
+
+#if defined(DEBUG)
+	cerr << "humidity (%): " << humidity << endl;
+#endif
+}
+
+void cellar_temperature_callback(uint8_t *buffer, uint8_t size) {
+	float temp;
+
+	memcpy(&temp, buffer, 4); 
+
+	record.cellar_Temperature = temp;
+
+#if defined(DEBUG)
+	cerr << "temp (C): " << temp << endl;
+#endif
+}
+
+void kitchen_temperature_callback(uint8_t *buffer, uint8_t size) {
+	float temp;
+
+	memcpy(&temp, buffer, 4); 
+
+	record.kitchen_Temperature = temp;
+
+#if defined(DEBUG)
+	cerr << "temp (C): " << temp << endl;
+#endif
+}
+
+void kitchen_light_callback(uint8_t *buffer, uint8_t size) {
+	float temp;
+
+	memcpy(&temp, buffer, 4); 
+
+	record.kitchen_Light = temp;
+
+#if defined(DEBUG)
+	cerr << "light (%): " << temp << endl;
+#endif
+}
+
+void terrace_temperature_callback(uint8_t *buffer, uint8_t size) {
+	float temp;
+
+	memcpy(&temp, buffer, 4); 
+
+	record.terrace_Temperature = temp;
+
+#if defined(DEBUG)
+	cerr << "temp (C): " << temp << endl;
+#endif
+}
+
+void room1_temperature_callback(uint8_t *buffer, uint8_t size) {
+	float temp;
+
+	memcpy(&temp, buffer, 4); 
+
+	record.room_1_Temperature = temp;
+
+#if defined(DEBUG)
+	cerr << "temp (C): " << temp << endl;
+#endif
+}
+
+
+void room1_pressure_callback(uint8_t *buffer, uint8_t size) {
+	float pressure;
+
+	memcpy(&pressure, buffer, 4); 
+
+	record.room_1_Pressure = pressure;
+
+#if defined(DEBUG)
+	cerr << "pressure (kPa): " << pressure << endl;
+#endif
+}
+
+
+void fan_state_callback(uint8_t *buffer, uint8_t size) {
+	bool state;
+
+	memcpy(&state, buffer, 1); 
+
+	record.cellar_FanState = state;
+
+#if defined(DEBUG)
+	cerr << "Fan state: " << state << endl;
+#endif
+}
+
+
+void rtc_callback(uint8_t *buffer, uint8_t size) {
+  uint32_t date = convertArraytoUint32(buffer);
+
+  record.date = date;
+
+#if defined(DEBUG)
+  cerr << "epoc: " << (unsigned int) date << endl;
+#endif
+}
+
+
+int main(int argc, char ** argv) {	 
+
+	string device = "/dev/tty.usbserial-AD025F4I";
+
+	if (argc > 1)
+		device = argv[1];
+ 
+	// TODO get the local address from command line too
+
+ 	try {
+		ClientSDP sdp(device,  XBeeAddress64(LOCAL_ADDR64_HIGH, LOCAL_ADDR64_LOW));
+	 
+
+		uint32_t date;
+		float cellar_Temperature;
+		float cellar_Humidity;
+		float terrace_Temperature;
+		bool cellar_FanState;		
+		float room_1_Temperature;
+		float room_1_Pressure;
+
+		cout<< "date\tCellar(Temp/C)\tCellar(Humidity/%)\tTerrace(Temp/C)\tCellar(State)\tRoom1(Temp/C)\tRoom1(Pressure/kPa)\tKitchen(Temp/C)\tKitchen(Light/%)"  << endl;
+
+		while (true) {
+
+			sdp.doAction("TEMPERATURE", "CELLAR", "GET_VALUE", &cellar_temperature_callback);
+
+			sdp.doAction("HUMIDITY", "CELLAR", "GET_VALUE", &humidity_callback);
+
+			sdp.doAction("FAN", "CELLAR", "GET_STATE", &fan_state_callback);
+
+			sdp.doAction("TEMPERATURE", "TERRACE", "GET_VALUE", &terrace_temperature_callback);
+
+			sdp.doAction("TEMPERATURE", "ROOM_1", "GET_VALUE", &room1_temperature_callback);
+
+			sdp.doAction("PRESSURE", "ROOM_1", "GET_VALUE", &room1_pressure_callback);
+
+			sdp.doAction("SDP_RTC", "UNDEF_LOCATION", "GET_VALUE", &rtc_callback);
+
+			sdp.doAction("TEMPERATURE", "KITCHEN", "GET_VALUE", &kitchen_temperature_callback);
+
+			sdp.doAction("LIGHT", "KITCHEN", "GET_VALUE", &kitchen_light_callback);
+			
+			cout << record;
+
+			sleep(60);
+		}
+	} catch (exception& e) { 
+        cerr << "Exception: " << e.what() << endl; 
+        cerr << "Check " << device << " is the tty to your XBee." << endl;
+        return -1;
+    }
+
+}
+

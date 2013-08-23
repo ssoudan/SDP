@@ -8,7 +8,7 @@
 
 Sebastien Soudan <sebastien.soudan@gmail.com> 2013
 
-APLv2
+GPLv3
 
 A Service Discovery Protocol for Arduino-Xbee based sensor networks.
 
@@ -42,6 +42,11 @@ Note that there are some 'corner' cases that are not yet supported by this lib:
   Though in case of an error during the execution of an action (NOT_DONE status), 
   the entry is removed.
 
+Note that you can also use it with local serial port of the machine. This works great 
+to query the service from a Raspberry Pi using Sparkfun XBee explorer for example as 
+servers/collector.cpp does for example.
+
+
 ===============
 To Do: 
 ===
@@ -49,9 +54,9 @@ To Do:
 - [ ] extract XBee from the stuff
 - [ ] add timeout mechanism
 - [ ] refine service/action model (single callback for an entire service?)
-- [ ] add location concept to the service
+- [X] add location concept to the service
 - [ ] improve the way the xmit status is checked
-- [ ] use it
+- [X] use it
 
 ===============
 Getting started
