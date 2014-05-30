@@ -82,6 +82,8 @@ public:
 	ClientSDP(string device, XBeeAddress64 local64) : io(), port(io, device), serial(&port, 1500) {	
 
 		port.set_option(boost::asio::serial_port_base::baud_rate(9600));
+		// Set hardware flow control (RTS/CTS)	
+		port.set_option(boost::asio::serial_port::flow_control(boost::asio::serial_port::flow_control::hardware));
 
 		setXBee(new XBee(serial));
 		setLocal64(local64);
