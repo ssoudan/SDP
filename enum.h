@@ -10,9 +10,9 @@
 
 namespace ServiceDiscovery {
 
-typedef enum { UNDEF_LOCATION = 0, TERRACE = 1, CELLAR = 2, ROOM_1 = 3, KITCHEN = 4} ServiceLocation;
+typedef enum { UNDEF_LOCATION = 0, TERRACE = 1, CELLAR = 2, ROOM_1 = 3, KITCHEN = 4, STAIRS = 5} ServiceLocation;
 
-typedef enum { UNDEF_SERVICE = 0, SDP_RTC = 1, TEMPERATURE = 2, PRESSURE = 3, FAN = 4, HUMIDITY = 5, LIGHT = 6} ServiceType;
+typedef enum { UNDEF_SERVICE = 0, SDP_RTC = 1, TEMPERATURE = 2, PRESSURE = 3, FAN = 4, HUMIDITY = 5, LIGHT = 6, MOVEMENT = 7, LED = 8} ServiceType;
 
 typedef enum { UNDEF_ACTION = 0, GET_VALUE = 1, SET_VALUE = 2 , GET_STATE = 3, START = 4, STOP = 5, AUTO = 6} ActionType;
 

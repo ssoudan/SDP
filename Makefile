@@ -3,8 +3,8 @@
 # @author: Sebastien Soudan <sebastien.soudan@gmail.com>
 #
 
-CPPFLAGS=-I. -Ixbee_local -ggdb -g3 -DLOCAL -I/usr/local/include/boost/
-#CPPFLAGS=-I. -Ixbee_local -ggdb -g3 -DDEBUG -DLOCAL -I/usr/local/include/boost/
+# CPPFLAGS=-I. -Ixbee_local -ggdb -g3 -DLOCAL -I/usr/local/include/boost/
+CPPFLAGS=-I. -Ixbee_local -ggdb -g3 -DDEBUG -DLOCAL -I/usr/local/include/boost/
 #CPPFLAGS=-I. -g3 -ggdb 
 
 LDFLAGS=

@@ -16,7 +16,7 @@ using namespace std;
 #include "Serial.h"
 
 #define LOCAL_ADDR64_HIGH 0x0013a200
-#define LOCAL_ADDR64_LOW  0x408bad4d
+#define LOCAL_ADDR64_LOW  0x408b60d9
   
 
 class Record {
@@ -30,6 +30,9 @@ public:
 	float room_1_Pressure;
 	float kitchen_Temperature;
 	float kitchen_Light;
+	float stairs_Light;
+	bool stairs_LedState;
+	bool stairs_Movement;
 
 private:
 	friend std::ostream& operator<<(std::ostream&, const Record&);
@@ -54,8 +57,12 @@ std::ostream& operator<<(std::ostream &strm, const Record &a) {
 				<< a.cellar_FanState << "\t"
 				<< a.room_1_Temperature << "\t"
 				<< a.room_1_Pressure << "\t"
-                                << a.kitchen_Temperature << "\t"
-				<< a.kitchen_Light << endl;
+				<< a.kitchen_Temperature << "\t"
+				<< a.kitchen_Light << "\t"
+				<< a.stairs_Light << "\t"
+				<< a.stairs_LedState << "\t"
+				<< a.stairs_Movement 
+				<< endl;
 }
 
 Record record;
@@ -83,7 +90,7 @@ public:
 
 		port.set_option(boost::asio::serial_port_base::baud_rate(9600));
 		// Set hardware flow control (RTS/CTS)	
-		port.set_option(boost::asio::serial_port::flow_control(boost::asio::serial_port::flow_control::hardware));
+		// port.set_option(boost::asio::serial_port::flow_control(boost::asio::serial_port::flow_control::hardware));
 
 		setXBee(new XBee(serial));
 		setLocal64(local64);
@@ -129,14 +136,14 @@ public:
 };
 
 
-std::map<std::string, ServiceDiscovery::ServiceLocation> ClientSDP::serviceLocationString2EnumMap = boost::assign::map_list_of("UNDEF_LOCATION", UNDEF_LOCATION)("TERRACE", TERRACE)("CELLAR", CELLAR)("ROOM_1", ROOM_1)("KITCHEN", KITCHEN);
-std::map<ServiceDiscovery::ServiceLocation, std::string> ClientSDP::serviceLocationEnum2StringMap = boost::assign::map_list_of(UNDEF_LOCATION, "UNDEF_LOCATION")(TERRACE, "TERRACE")(CELLAR, "CELLAR")(ROOM_1, "ROOM_1")(KITCHEN, "KITCHEN");
+std::map<std::string, ServiceDiscovery::ServiceLocation> ClientSDP::serviceLocationString2EnumMap = boost::assign::map_list_of("UNDEF_LOCATION", UNDEF_LOCATION)("TERRACE", TERRACE)("CELLAR", CELLAR)("ROOM_1", ROOM_1)("KITCHEN", KITCHEN)("STAIRS", STAIRS);
+std::map<ServiceDiscovery::ServiceLocation, std::string> ClientSDP::serviceLocationEnum2StringMap = boost::assign::map_list_of(UNDEF_LOCATION, "UNDEF_LOCATION")(TERRACE, "TERRACE")(CELLAR, "CELLAR")(ROOM_1, "ROOM_1")(KITCHEN, "KITCHEN")(STAIRS, "STAIRS");
 
-std::map<std::string, ServiceDiscovery::ServiceType> ClientSDP::serviceTypeString2EnumMap = boost::assign::map_list_of("UNDEF_SERVICE", UNDEF_SERVICE)("SDP_RTC", SDP_RTC)("TEMPERATURE",TEMPERATURE)("PRESSURE", PRESSURE)("FAN", FAN)("HUMIDITY", HUMIDITY)("LIGHT", LIGHT);
-std::map<ServiceDiscovery::ServiceType, std::string> ClientSDP::serviceTypeEnum2StringMap = boost::assign::map_list_of(UNDEF_SERVICE, "UNDEF_SERVICE")(SDP_RTC, "SDP_RTC")(TEMPERATURE,"TEMPERATURE")(PRESSURE, "PRESSURE")(FAN, "FAN")(HUMIDITY, "HUMIDITY")(LIGHT, "LIGHT");
+std::map<std::string, ServiceDiscovery::ServiceType> ClientSDP::serviceTypeString2EnumMap = boost::assign::map_list_of("UNDEF_SERVICE", UNDEF_SERVICE)("SDP_RTC", SDP_RTC)("TEMPERATURE",TEMPERATURE)("PRESSURE", PRESSURE)("FAN", FAN)("HUMIDITY", HUMIDITY)("LIGHT", LIGHT)("MOVEMENT", MOVEMENT)("LED", LED);
+std::map<ServiceDiscovery::ServiceType, std::string> ClientSDP::serviceTypeEnum2StringMap = boost::assign::map_list_of(UNDEF_SERVICE, "UNDEF_SERVICE")(SDP_RTC, "SDP_RTC")(TEMPERATURE,"TEMPERATURE")(PRESSURE, "PRESSURE")(FAN, "FAN")(HUMIDITY, "HUMIDITY")(LIGHT, "LIGHT")(MOVEMENT, "MOVEMENT")(LED, "LED");
 
- std::map<std::string, ServiceDiscovery::ActionType> ClientSDP::actionTypeString2EnumMap = boost::assign::map_list_of("UNDEF_ACTION", UNDEF_ACTION) ("GET_VALUE", GET_VALUE) ("SET_VALUE", SET_VALUE)  ("GET_STATE", GET_STATE) ("START", START) ("STOP", STOP) ("AUTO", AUTO);
- std::map<ServiceDiscovery::ActionType, std::string> ClientSDP::actionTypeEnum2StringMap = boost::assign::map_list_of(UNDEF_ACTION, "UNDEF_ACTION") (GET_VALUE, "GET_VALUE") (SET_VALUE, "SET_VALUE")  (GET_STATE, "GET_STATE") (START, "START") (STOP, "STOP") (AUTO, "AUTO");
+std::map<std::string, ServiceDiscovery::ActionType> ClientSDP::actionTypeString2EnumMap = boost::assign::map_list_of("UNDEF_ACTION", UNDEF_ACTION) ("GET_VALUE", GET_VALUE) ("SET_VALUE", SET_VALUE)  ("GET_STATE", GET_STATE) ("START", START) ("STOP", STOP) ("AUTO", AUTO);
+std::map<ServiceDiscovery::ActionType, std::string> ClientSDP::actionTypeEnum2StringMap = boost::assign::map_list_of(UNDEF_ACTION, "UNDEF_ACTION") (GET_VALUE, "GET_VALUE") (SET_VALUE, "SET_VALUE")  (GET_STATE, "GET_STATE") (START, "START") (STOP, "STOP") (AUTO, "AUTO");
 
 void humidity_callback(uint8_t *buffer, uint8_t size) {
 	float humidity;
@@ -180,6 +187,18 @@ void kitchen_light_callback(uint8_t *buffer, uint8_t size) {
 	memcpy(&temp, buffer, 4); 
 
 	record.kitchen_Light = temp;
+
+#if defined(DEBUG)
+	cerr << "light (%): " << temp << endl;
+#endif
+}
+
+void stairs_light_callback(uint8_t *buffer, uint8_t size) {
+	float temp;
+
+	memcpy(&temp, buffer, 4); 
+
+	record.stairs_Light = temp;
 
 #if defined(DEBUG)
 	cerr << "light (%): " << temp << endl;
@@ -237,6 +256,30 @@ void fan_state_callback(uint8_t *buffer, uint8_t size) {
 }
 
 
+void stairs_movement_callback(uint8_t *buffer, uint8_t size) {
+	bool state;
+
+	memcpy(&state, buffer, 1); 
+
+	record.stairs_Movement = state;
+
+#if defined(DEBUG)
+	cerr << "Movement: " << state << endl;
+#endif
+}
+
+void stairs_led_callback(uint8_t *buffer, uint8_t size) {
+	bool state;
+
+	memcpy(&state, buffer, 1); 
+
+	record.stairs_LedState = state;
+
+#if defined(DEBUG)
+	cerr << "LED state: " << state << endl;
+#endif
+}
+
 void rtc_callback(uint8_t *buffer, uint8_t size) {
   uint32_t date = convertArraytoUint32(buffer);
 
@@ -269,7 +312,7 @@ int main(int argc, char ** argv) {
 		float room_1_Temperature;
 		float room_1_Pressure;
 
-		cout<< "date\tCellar(Temp/C)\tCellar(Humidity/%)\tTerrace(Temp/C)\tCellar(State)\tRoom1(Temp/C)\tRoom1(Pressure/kPa)\tKitchen(Temp/C)\tKitchen(Light/%)"  << endl;
+		cout<< "date\tCellar(Temp/C)\tCellar(Humidity/%)\tTerrace(Temp/C)\tCellar(State)\tRoom1(Temp/C)\tRoom1(Pressure/kPa)\tKitchen(Temp/C)\tKitchen(Light/%)\tStairs(Light/%)\tStairs(LED)\tStairs(Movement)"  << endl;
 
 		while (true) {
 
@@ -290,10 +333,16 @@ int main(int argc, char ** argv) {
 			sdp.doAction("TEMPERATURE", "KITCHEN", "GET_VALUE", &kitchen_temperature_callback);
 
 			sdp.doAction("LIGHT", "KITCHEN", "GET_VALUE", &kitchen_light_callback);
+
+			sdp.doAction("LIGHT", "STAIRS", "GET_VALUE", &stairs_light_callback);
+
+			sdp.doAction("LED", "STAIRS", "GET_STATE", &stairs_led_callback);
+
+			sdp.doAction("MOVEMENT", "STAIRS", "GET_VALUE", &stairs_movement_callback);
 			
 			cout << record;
 
-			sleep(60);
+			sleep(6);
 		}
 	} catch (exception& e) { 
         cerr << "Exception: " << e.what() << endl; 

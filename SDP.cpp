@@ -416,7 +416,7 @@ SDPState SDP::processMessage(XBeeAddress64 &addr64, const FSR_Message *message) 
 		return FSR_RECEIVED;
 	}
 
-	ERROR("Failed to find a slot");
+	ERROR("Failed to find a slot - consider increase RSD_SIZE");
 
 	return FSR_RECEIVED;
 };

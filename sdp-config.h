@@ -13,19 +13,33 @@
 	Number of services to keep in the Remote Service Directory
 	- those that we use on remote endpoints.
  */
-#define RSD_SIZE 10
+#ifdef LOCAL
+	#define RSD_SIZE 30
+#else
+	#define RSD_SIZE 10
+#endif
 
 /**
 	Number of callback to keep in the Service Callback Directory
 	- the methods that will be called on DAR message reception.
  */	
-#define SCD_SIZE 10
+#ifdef LOCAL
+	#define SCD_SIZE 30
+#else
+	#define SCD_SIZE 10
+#endif
+
 
 /**
 	Number of services to keep in the Local Service Directory 
 	- those that can be used by others.
  */	
-#define LSD_SIZE 10
+#ifdef LOCAL
+	#define LSD_SIZE 30
+#else
+	#define LSD_SIZE 10
+#endif
+
 
 /**
 	Size of the buffer to be passed to service methods.
