@@ -9,6 +9,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <assert.h>
+#include <fstream>
 #include <boost/assign/list_of.hpp>
 #include "stream.h"
 using namespace std;
@@ -17,7 +18,8 @@ using namespace std;
 
 #define LOCAL_ADDR64_HIGH 0x0013a200
 #define LOCAL_ADDR64_LOW  0x408b60d9
-  
+
+#define MAX_ROW 2000
 
 class Record {
 public:
@@ -312,7 +314,13 @@ int main(int argc, char ** argv) {
 		float room_1_Temperature;
 		float room_1_Pressure;
 
-		cout<< "date\tCellar(Temp/C)\tCellar(Humidity/%)\tTerrace(Temp/C)\tCellar(State)\tRoom1(Temp/C)\tRoom1(Pressure/kPa)\tKitchen(Temp/C)\tKitchen(Light/%)\tStairs(Light/%)\tStairs(LED)\tStairs(Movement)"  << endl;
+		std::fstream outputFile;
+		int count = 0;
+		outputFile.open ("/var/www/last-data.tsv", std::fstream::out | std::fstream::trunc); 
+
+		outputFile << "date\tCellar(Temp/C)\tCellar(Humidity/%)\tTerrace(Temp/C)\tCellar(State)\tRoom1(Temp/C)\tRoom1(Pressure/kPa)\tKitchen(Temp/C)\tKitchen(Light/%)\tStairs(Light/%)\tStairs(LED)\tStairs(Movement)"  << endl;
+		
+		cout << "date\tCellar(Temp/C)\tCellar(Humidity/%)\tTerrace(Temp/C)\tCellar(State)\tRoom1(Temp/C)\tRoom1(Pressure/kPa)\tKitchen(Temp/C)\tKitchen(Light/%)\tStairs(Light/%)\tStairs(LED)\tStairs(Movement)"  << endl;
 
 		while (true) {
 
@@ -341,6 +349,23 @@ int main(int argc, char ** argv) {
 			sdp.doAction("MOVEMENT", "STAIRS", "GET_VALUE", &stairs_movement_callback);
 			
 			cout << record;
+			outputFile << record;
+
+			count ++;
+
+			if (count > MAX_ROW) {
+				count = 0;
+
+				// close
+				outputFile.close();
+
+				// open/truncate
+				outputFile.open ("/var/www/last-data.tsv", std::fstream::out | std::fstream::trunc); 
+
+				// add header
+				outputFile << "date\tCellar(Temp/C)\tCellar(Humidity/%)\tTerrace(Temp/C)\tCellar(State)\tRoom1(Temp/C)\tRoom1(Pressure/kPa)\tKitchen(Temp/C)\tKitchen(Light/%)\tStairs(Light/%)\tStairs(LED)\tStairs(Movement)"  << endl;
+
+			}
 
 			sleep(6);
 		}
