@@ -142,11 +142,11 @@ public:
 };
 
 
-std::map<std::string, ServiceDiscovery::ServiceLocation> ClientSDP::serviceLocationString2EnumMap = boost::assign::map_list_of("UNDEF_LOCATION", UNDEF_LOCATION)("TERRACE", TERRACE)("CELLAR", CELLAR)("ROOM_1", ROOM_1)("KITCHEN", KITCHEN)("STAIRS", STAIRS);
-std::map<ServiceDiscovery::ServiceLocation, std::string> ClientSDP::serviceLocationEnum2StringMap = boost::assign::map_list_of(UNDEF_LOCATION, "UNDEF_LOCATION")(TERRACE, "TERRACE")(CELLAR, "CELLAR")(ROOM_1, "ROOM_1")(KITCHEN, "KITCHEN")(STAIRS, "STAIRS");
+std::map<std::string, ServiceDiscovery::ServiceLocation> ClientSDP::serviceLocationString2EnumMap = boost::assign::map_list_of("UNDEF_LOCATION", UNDEF_LOCATION)("TERRACE", TERRACE)("CELLAR", CELLAR)("ROOM_1", ROOM_1)("KITCHEN", KITCHEN)("STAIRS", STAIRS)("WATERTANK", WATERTANK);
+std::map<ServiceDiscovery::ServiceLocation, std::string> ClientSDP::serviceLocationEnum2StringMap = boost::assign::map_list_of(UNDEF_LOCATION, "UNDEF_LOCATION")(TERRACE, "TERRACE")(CELLAR, "CELLAR")(ROOM_1, "ROOM_1")(KITCHEN, "KITCHEN")(STAIRS, "STAIRS")(WATERTANK, "WATERTANK");
 
-std::map<std::string, ServiceDiscovery::ServiceType> ClientSDP::serviceTypeString2EnumMap = boost::assign::map_list_of("UNDEF_SERVICE", UNDEF_SERVICE)("SDP_RTC", SDP_RTC)("TEMPERATURE",TEMPERATURE)("PRESSURE", PRESSURE)("FAN", FAN)("HUMIDITY", HUMIDITY)("LIGHT", LIGHT)("MOVEMENT", MOVEMENT)("LED", LED);
-std::map<ServiceDiscovery::ServiceType, std::string> ClientSDP::serviceTypeEnum2StringMap = boost::assign::map_list_of(UNDEF_SERVICE, "UNDEF_SERVICE")(SDP_RTC, "SDP_RTC")(TEMPERATURE,"TEMPERATURE")(PRESSURE, "PRESSURE")(FAN, "FAN")(HUMIDITY, "HUMIDITY")(LIGHT, "LIGHT")(MOVEMENT, "MOVEMENT")(LED, "LED");
+std::map<std::string, ServiceDiscovery::ServiceType> ClientSDP::serviceTypeString2EnumMap = boost::assign::map_list_of("UNDEF_SERVICE", UNDEF_SERVICE)("SDP_RTC", SDP_RTC)("TEMPERATURE",TEMPERATURE)("PRESSURE", PRESSURE)("FAN", FAN)("HUMIDITY", HUMIDITY)("LIGHT", LIGHT)("MOVEMENT", MOVEMENT)("LED", LED)("DEPTH", DEPTH);
+std::map<ServiceDiscovery::ServiceType, std::string> ClientSDP::serviceTypeEnum2StringMap = boost::assign::map_list_of(UNDEF_SERVICE, "UNDEF_SERVICE")(SDP_RTC, "SDP_RTC")(TEMPERATURE,"TEMPERATURE")(PRESSURE, "PRESSURE")(FAN, "FAN")(HUMIDITY, "HUMIDITY")(LIGHT, "LIGHT")(MOVEMENT, "MOVEMENT")(LED, "LED")(DEPTH, "DEPTH");
 
 std::map<std::string, ServiceDiscovery::ActionType> ClientSDP::actionTypeString2EnumMap = boost::assign::map_list_of("UNDEF_ACTION", UNDEF_ACTION) ("GET_VALUE", GET_VALUE) ("SET_VALUE", SET_VALUE)  ("GET_STATE", GET_STATE) ("START", START) ("STOP", STOP) ("AUTO", AUTO);
 std::map<ServiceDiscovery::ActionType, std::string> ClientSDP::actionTypeEnum2StringMap = boost::assign::map_list_of(UNDEF_ACTION, "UNDEF_ACTION") (GET_VALUE, "GET_VALUE") (SET_VALUE, "SET_VALUE")  (GET_STATE, "GET_STATE") (START, "START") (STOP, "STOP") (AUTO, "AUTO");
