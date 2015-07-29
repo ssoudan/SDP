@@ -21,6 +21,8 @@ using namespace std;
 
 #define MAX_ROW 2000
 
+#define HEADER "date\tCellar(Temp/C)\tCellar(Humidity/%)\tTerrace(Temp/C)\tCellar(State)\tRoom1(Temp/C)\tRoom1(Pressure/kPa)\tKitchen(Temp/C)\tKitchen(Light/%)\tStairs(Light/%)\tStairs(LED)\tStairs(Movement)\tWaterTank(Depth/cm)"
+
 class Record {
 public:
 	uint32_t date;
@@ -35,6 +37,7 @@ public:
 	float stairs_Light;
 	bool stairs_LedState;
 	bool stairs_Movement;
+	uint16_t waterTank_Depth;
 
 private:
 	friend std::ostream& operator<<(std::ostream&, const Record&);
@@ -63,7 +66,8 @@ std::ostream& operator<<(std::ostream &strm, const Record &a) {
 				<< a.kitchen_Light << "\t"
 				<< a.stairs_Light << "\t"
 				<< a.stairs_LedState << "\t"
-				<< a.stairs_Movement 
+				<< a.stairs_Movement << "\t"
+				<< a.waterTank_Depth
 				<< endl;
 }
 
@@ -292,6 +296,16 @@ void rtc_callback(uint8_t *buffer, uint8_t size) {
 #endif
 }
 
+void waterTank_depth_callback(uint8_t *buffer, uint8_t size) {
+  uint16_t depth = convertArraytoUint16(buffer);
+
+  record.waterTank_Depth = depth;
+
+#if defined(DEBUG)
+  cerr << "depth: " << depth << endl;
+#endif
+}
+
 
 int main(int argc, char ** argv) {	 
 
@@ -318,9 +332,9 @@ int main(int argc, char ** argv) {
 		int count = 0;
 		outputFile.open ("/var/www/last-data.tsv", std::fstream::out | std::fstream::trunc); 
 
-		outputFile << "date\tCellar(Temp/C)\tCellar(Humidity/%)\tTerrace(Temp/C)\tCellar(State)\tRoom1(Temp/C)\tRoom1(Pressure/kPa)\tKitchen(Temp/C)\tKitchen(Light/%)\tStairs(Light/%)\tStairs(LED)\tStairs(Movement)"  << endl;
+		outputFile << HEADER << endl;
 		
-		cout << "date\tCellar(Temp/C)\tCellar(Humidity/%)\tTerrace(Temp/C)\tCellar(State)\tRoom1(Temp/C)\tRoom1(Pressure/kPa)\tKitchen(Temp/C)\tKitchen(Light/%)\tStairs(Light/%)\tStairs(LED)\tStairs(Movement)"  << endl;
+		cout << HEADER << endl;
 
 		while (true) {
 
@@ -347,6 +361,8 @@ int main(int argc, char ** argv) {
 			sdp.doAction("LED", "STAIRS", "GET_STATE", &stairs_led_callback);
 
 			sdp.doAction("MOVEMENT", "STAIRS", "GET_VALUE", &stairs_movement_callback);
+
+			sdp.doAction("DEPTH", "WATERTANK", "GET_VALUE", &waterTank_depth_callback);
 			
 			cout << record;
 			outputFile << record;
@@ -363,7 +379,7 @@ int main(int argc, char ** argv) {
 				outputFile.open ("/var/www/last-data.tsv", std::fstream::out | std::fstream::trunc); 
 
 				// add header
-				outputFile << "date\tCellar(Temp/C)\tCellar(Humidity/%)\tTerrace(Temp/C)\tCellar(State)\tRoom1(Temp/C)\tRoom1(Pressure/kPa)\tKitchen(Temp/C)\tKitchen(Light/%)\tStairs(Light/%)\tStairs(LED)\tStairs(Movement)"  << endl;
+				outputFile << HEADER << endl;
 
 			}
 
