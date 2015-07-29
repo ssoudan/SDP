@@ -37,7 +37,7 @@ public:
 	float stairs_Light;
 	bool stairs_LedState;
 	bool stairs_Movement;
-	uint16_t waterTank_Depth;
+	uint32_t waterTank_Depth;
 
 private:
 	friend std::ostream& operator<<(std::ostream&, const Record&);
@@ -297,7 +297,9 @@ void rtc_callback(uint8_t *buffer, uint8_t size) {
 }
 
 void waterTank_depth_callback(uint8_t *buffer, uint8_t size) {
-  uint16_t depth = convertArraytoUint16(buffer);
+  float depth;
+
+  memcpy(&depth, buffer, 4);
 
   record.waterTank_Depth = depth;
 
